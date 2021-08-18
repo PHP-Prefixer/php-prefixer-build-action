@@ -15,7 +15,7 @@ inputs:
   project_id:
     description: 'The project ID to process the source code. Example: `5123`'
     required: true
-  github_access_token:
+  gh_personal_access_token:
     description: 'GitHub PAT/Personal Access Token. Required for the private repository only'
     required: false
     default: ''

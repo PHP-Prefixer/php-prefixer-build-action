@@ -25,7 +25,7 @@ PERSONAL_ACCESS_TOKEN="$INPUT_PERSONAL_ACCESS_TOKEN"
 PROJECT_ID="$INPUT_PROJECT_ID"
 
 # GitHub Access Token:  An optional GitHub token to access composer.json dependencies that are managed in private repositories.
-GITHUB_ACCESS_TOKEN="$INPUT_GITHUB_ACCESS_TOKEN"
+GITHUB_ACCESS_TOKEN="$INPUT_GH_PERSONAL_ACCESS_TOKEN"
 OUT
 
 initGitRepoForTargetDir() {
@@ -84,9 +84,7 @@ find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) 
 git add --all .
 git commit --all -m "Publish prefixed build $(date '+%Y-%m-%d %H:%M:%S')"
 
-#git pull -s recursive -X ours $remote "$INPUT_TARGET_BRANCH" || true # remote may not exist
 git pull -s ours $remote "$INPUT_TARGET_BRANCH" || true # remote may not exist
-
 
 git push "$remote" "$INPUT_TARGET_BRANCH":"$INPUT_TARGET_BRANCH"
 
