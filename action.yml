@@ -1,0 +1,27 @@
+name: PHP-Prefixer
+author: Put your name here
+description: 'Applies prefixes for PHP code stored in a specified directory'
+inputs:
+  source_dir_path:
+    description: 'Relative path to source project directory. It must contain .git repository and composer.json file. If not set the base repository directory will be used as the value. Example: `foo/bar`'
+    required: false
+  target_branch:
+    description: todo
+    required: true
+    default: 'prefixed'
+  personal_access_token:
+    description: 'PAT/Personal Access Token generated via the https://php-prefixer.com site, Example: `789|1234567890123456789012345678901234567890`'
+    required: true
+  project_id:
+    description: 'The project ID to process the source code. Example: `5123`'
+    required: true
+  github_access_token:
+    description: 'GitHub PAT/Personal Access Token. Required for the private repository only'
+    required: false
+    default: ''
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+branding:
+  icon: 'code'
+  color: 'blue'
