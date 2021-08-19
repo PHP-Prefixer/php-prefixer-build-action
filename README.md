@@ -42,7 +42,7 @@ class Carbon extends DateTime
 ...
 ```
 
-An example repository has been created at https://php-prefixer.com/docs/guides/how-to-prefix-wordpress-plugin-with-private-dep/ to show how to use this action in a real project. The repository also depends on a private dependency and uses GitHub PAT/Personal Access Tokens for authentication.
+An example repository has been created at https://github.com/PHP-Prefixer/hello-wp-world to show how to use this action in a real project. The repository also depends on a private dependency and uses GitHub PAT/Personal Access Tokens for authentication.
 
 ## Usage
 
@@ -111,7 +111,7 @@ jobs:
           gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
 ```
 
-There is an example repository available for reference at https://github.com/PHP-Prefixer/how-to-prefix-wordpress-plugin-with-private-dep that uses a private dependency. Check it out for a live working project.
+There is an example repository available for reference at https://github.com/PHP-Prefixer/hello-wp-world that uses a private dependency. Check it out for a live working project.
 
 ## Version Numbers
 
