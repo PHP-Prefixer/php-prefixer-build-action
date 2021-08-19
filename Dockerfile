@@ -17,7 +17,7 @@ RUN curl -sSfL -o /php-prefixer-cli.phar 'https://github.com/PHP-Prefixer/php-pr
     && curl -sSfL -o /usr/local/bin/composer 'https://getcomposer.org/composer.phar' \
     && chmod +x /usr/local/bin/composer \
     && apt-get update \
-    && apt-get install -y --no-install-recommends git rsync libzip-dev zip \
+    && apt-get install -y --no-install-recommends git rsync libzip-dev zip unzip \
     && docker-php-ext-configure zip \
     && docker-php-ext-install zip \
     && rm -rf /var/lib/apt/lists/*
