@@ -20,6 +20,14 @@ RUN curl -sSfL -o /php-prefixer-cli.phar 'https://github.com/PHP-Prefixer/php-pr
     && apt-get install -y --no-install-recommends git rsync \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get install -y --no-install-recommends \
+       libzip-dev \
+       zip \
+   && docker-php-ext-configure zip \
+   && docker-php-ext-install zip \
+   && docker-php-ext-configure opcache \
+   && docker-php-ext-install opcache
+
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
