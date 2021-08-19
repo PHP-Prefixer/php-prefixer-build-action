@@ -30,5 +30,5 @@ runs:
   image: 'Dockerfile'
 
 branding:
-  icon: 'code'
+  icon: 'codesandbox'
   color: 'blue'
