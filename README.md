@@ -46,7 +46,7 @@ An example repository has been created at https://github.com/PHP-Prefixer/hello-
 
 ## Usage
 
-To use the Action, you must create an account on [PHP-Prefixer](https://php-prefixer.com/) and prepare your projects with the prefix defined in the `composer.json` schema. Before using the Action and the command-line, we recommend checking the documentation and guides here: <https://php-prefixer.com/docs/>. You can also prefix your firsts projects on the service web interface.
+To use the Action, you must create an account on [PHP-Prefixer](https://php-prefixer.com/) and prepare your projects with the prefix defined in the `composer.json` schema. Before using the Action and the command-line, we recommend checking the documentation and guides here: <https://php-prefixer.com/docs/>. You can also prefix your firsts projects on the service web interface, and in a second step, integrate Action in your repositories.
 
 Create your Github Workflow configuration in `.github/workflows/prefixer.yml` or similar.
 
@@ -64,7 +64,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run PHP-Prefixer
-        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.1
+        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.2
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -79,11 +79,11 @@ The Action requires two parameters to function, and it can receive additional pa
 
 Parameter | Description | Required | Example
 ---------|----------| ---------|----------
-PERSONAL_ACCESS_TOKEN | The PHP-Prefixer PAT/Personal Access Token. The token must be configured in the PHP-Prefixer account. | Yes | `789|1234567890123456789012345678901234567890`
+PERSONAL_ACCESS_TOKEN | The PHP-Prefixer PAT/Personal Access Token. The token must be configured in the PHP-Prefixer account. | Yes | `789\|123456789...`
 PROJECT_ID | The project ID to process the source code. The project must be configured in your account in the PHP-Prefixer account. | Yes | `5432`
 SOURCE_DIR_PATH | The relative path to the source project directory. It must contain a .git repository and composer.json file. If not, set the base repository directory will be used as the value. Example: `foo/bar`. | No | `./`
-TARGET_BRANCH | The branch in the repository where PHP-Prefixer will store the prefixed files after processing. | No | `prefixed`
-GH_PERSONAL_ACCESS_TOKEN | The GitHub PAT/Personal Access Token to access private repositories. It is only required if the project, the library or the dependencies are private. | No |
+TARGET_BRANCH | The branch in the repository where PHP-Prefixer will store the prefixed files after processing. Default value: `prefixed`. | No |
+GH_PERSONAL_ACCESS_TOKEN | The GitHub PAT/Personal Access Token to access private repositories. It is only required if the project, the library or the dependencies are private. | No | `ghp_F4fZ9Cq7QF...`
 
 ## Prefixing Private Repositories
 
@@ -102,7 +102,7 @@ jobs:
     ...
 
       - name: Run PHP-Prefixer
-        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.1
+        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.2
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
