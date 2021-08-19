@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# @package     PHP Prefixer Build Action
+#
+# @author      PHP Prefixer <team@php-prefixer.com>
+# @copyright   Copyright (c)2019-2021 Desarrollos Inteligentes Virtuales, SL. All rights reserved.
+# @license     MIT
+#
+# @see         https://php-prefixer.com
+
 set -eu
 
 if [[ -z "$INPUT_SOURCE_DIR_PATH" ]]; then
@@ -35,7 +43,6 @@ initGitRepoForTargetDir() {
 
     readonly remote=tmp$(($(date +%s%N)/1000000))
 
-    #git checkout "$INPUT_TARGET_BRANCH" || git checkout -b "$INPUT_TARGET_BRANCH"git remote add "$remote" "https://$INPUT_TARGET_REPO_USER:$GITHUB_ACCESS_TOKEN@github.com/$GITHUB_REPOSITORY"
     git remote add "$remote" "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY"
 
     git fetch "$remote"

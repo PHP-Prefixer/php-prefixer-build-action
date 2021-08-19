@@ -1,5 +1,17 @@
+# @package     PHP Prefixer Build Action
+#
+# @author      PHP Prefixer <team@php-prefixer.com>
+# @copyright   Copyright (c)2019-2021 Desarrollos Inteligentes Virtuales, SL. All rights reserved.
+# @license     MIT
+#
+# @see         https://php-prefixer.com
+
+#
 # https://github.com/docker-library/php/blob/d2b630dc89b257cb80d6fc99e177caae152830b8/8.0/buster/cli/Dockerfile
-FROM php:8.0.9-cli
+# https://hub.docker.com/_/php
+#
+
+FROM php:8.0-cli
 RUN curl -sSfL -o /php-prefixer-cli.phar 'https://github.com/PHP-Prefixer/php-prefixer-cli/releases/download/0.0.6/php-prefixer-cli.phar' \
     && chmod +x php-prefixer-cli.phar \
     && curl -sSfL -o /usr/local/bin/composer 'https://getcomposer.org/composer.phar' \
