@@ -88,11 +88,13 @@ find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) 
 
 /php-prefixer-cli.phar prefix --delete-build
 
-git add --all .
-git commit --all -m "Publish prefixed build $(date '+%Y-%m-%d %H:%M:%S')"
+CHANGED=$(git status --porcelain)
 
-git pull -s ours $remote "$INPUT_TARGET_BRANCH" || true # remote may not exist
-
-git push "$remote" "$INPUT_TARGET_BRANCH":"$INPUT_TARGET_BRANCH"
+if [ -n "${CHANGED}" ]; then
+    git add --all .
+    git commit --all -m "Publish prefixed build $(date '+%Y-%m-%d %H:%M:%S')"
+    git pull -s ours $remote "$INPUT_TARGET_BRANCH" || true # remote may not exist
+    git push "$remote" "$INPUT_TARGET_BRANCH":"$INPUT_TARGET_BRANCH"
+fi
 
 popd > /dev/null # $targetDirPath
