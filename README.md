@@ -64,7 +64,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run PHP-Prefixer
-        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.5
+        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.6
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -102,7 +102,7 @@ jobs:
     ...
 
       - name: Run PHP-Prefixer
-        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.5
+        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.6
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
