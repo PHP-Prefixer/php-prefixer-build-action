@@ -1,6 +1,6 @@
 name: PHP-Prefixer
 author: PHP Prefixer <team@php-prefixer.com>
-description: 'Action to prefix PHP libraries and projects. PHP-Prefixer is an automated online service powered by a complex rule-based system to apply prefixes to Composer dependencies. For information, please, visit https://php-prefixer.com.'
+description: 'Prefix PHP libraries and projects. PHP-Prefixer is a service to apply vendor prefixes to Composer namespaces, traits & more.'
 
 inputs:
   personal_access_token:
@@ -30,5 +30,5 @@ runs:
   image: 'Dockerfile'
 
 branding:
-  icon: 'codesandbox'
+  icon: 'package'
   color: 'blue'
