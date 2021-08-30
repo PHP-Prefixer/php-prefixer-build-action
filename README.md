@@ -6,7 +6,7 @@ Use the PHP Prefixer CLI in your Github Actions
 
 The **PHP Prefixer Build Action** integrates the [PHP-Prefixer](https://php-prefixer.com/) service with GitHub Actions.
 
-**PHP-Prefixer** is a service to apply PHP prefixes to namespaces, functions, helpers, traits, interfaces, etc. You start with with a Composer project and a set of dependencies, and prefix all library files at once to generate a consistent prefixed codebase.
+**PHP-Prefixer** is a service to apply PHP prefixes to namespaces, functions, helpers, traits, interfaces, etc. You start with a Composer project and a set of dependencies, and prefix all library files at once to generate a consistent prefixed codebase.
 
 PHP-Prefixer abstracts the complexity of manually applying prefixes to PHP files. The service **automates and streamlines the process of prefixing** while providing the scalability and simplicity of serverless computing.
 
