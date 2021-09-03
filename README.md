@@ -46,7 +46,7 @@ An example repository has been created at https://github.com/PHP-Prefixer/hello-
 
 ## Usage
 
-To use the Action, you must create an account on [PHP-Prefixer](https://php-prefixer.com/) and prepare your projects with the prefix defined in the `composer.json` schema. Before using the Action and the command-line, we recommend checking the documentation and guides here: <https://php-prefixer.com/docs/>. You can first prefix your project on the service web interface, and then integrate Action in your repositories.
+To use the Action, you must create an account on [PHP-Prefixer](https://php-prefixer.com/) and prepare your projects with the prefix defined in the composer.json schema. You can first prefix your project on the service web interface and then integrate Action in your repositories. Before using the Action and the command-line, we recommend checking the documentation and guides here: <https://php-prefixer.com/docs/guides/>.
 
 Create your Github Workflow configuration in `.github/workflows/prefixer.yml`.
 
