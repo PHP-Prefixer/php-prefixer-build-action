@@ -36,7 +36,7 @@ PROJECT_ID="$INPUT_PROJECT_ID"
 GITHUB_ACCESS_TOKEN="$INPUT_GH_PERSONAL_ACCESS_TOKEN"
 OUT
 
-initGitRepoForTargetDir() {
+initTargetDirGitRepo() {
     rsync -avq "$sourceDirPath/.git" "$targetDirPath"
 
     pushd "$targetDirPath" > /dev/null
@@ -68,7 +68,6 @@ copyFilesFromSourceDirToTargetDir() {
         #        --exclude=node_modules/ \
 }
 
-# $dirPath: Directory path with composer.json file.
 initComposerPackages() {
     pushd "$1" > /dev/null
     composer update --no-dev --no-interaction
@@ -76,21 +75,36 @@ initComposerPackages() {
     popd > /dev/null
 }
 
-initGitRepoForTargetDir
+prepareTheTargetDir() {
+    pushd "$targetDirPath" > /dev/null
+
+    # Remove the source composer.json, composer.lock, vendor, and vendor_prefixed to avoid collisions when receiving the prefixed results
+    find "$targetDirPath" \( \( -name composer.json -o -name composer.lock \) -type f \) -print0 | xargs -0 rm -rf
+    find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) -print0 | xargs -0 rm -rf
+}
+
+# Create the target directory where the prefixed results will be stored
+initTargetDirGitRepo
+
+# Composer update & dump-autoload to check everything is Ok
 initComposerPackages "$sourceDirPath"
+
+# Copy everything from source to target to have the complete project on the target directory
 copyFilesFromSourceDirToTargetDir
+
+# Composer update & dump-autoload to check everything is Ok
 initComposerPackages "$targetDirPath"
 
-pushd "$targetDirPath" > /dev/null
+# Clean the composer-related files from target directory before prefixing
+prepareTheTargetDir
 
-find "$targetDirPath" \( \( -name composer.json -o -name composer.lock \) -type f \) -print0 | xargs -0 rm -rf
-find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) -print0 | xargs -0 rm -rf
-
+# Let's go!
 /php-prefixer-cli.phar prefix --delete-build
 
 CHANGED=$(git status --porcelain)
 
 if [ -n "${CHANGED}" ]; then
+    # If there're changes, commit them
     git add --all .
     git commit --all -m "Publish prefixed build $(date '+%Y-%m-%d %H:%M:%S')"
     git pull -s ours $remote "$INPUT_TARGET_BRANCH" || true # remote may not exist
