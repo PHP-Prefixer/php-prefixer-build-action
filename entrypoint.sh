@@ -78,7 +78,8 @@ initComposerPackages() {
 prepareTheTargetDir() {
     pushd "$targetDirPath" > /dev/null
 
-    # Remove the source composer.json, composer.lock, vendor, and vendor_prefixed to avoid collisions when receiving the prefixed results
+    # Remove the source composer.json, composer.lock, vendor, and vendor_prefixed to avoid collisions when receiving the prefixed results:
+    # the prefixed composer.json, composer.lock and vendor folders are included in the prefixed results and they must replace the files copied from source.
     find "$targetDirPath" \( \( -name composer.json -o -name composer.lock \) -type f \) -print0 | xargs -0 rm -rf
     find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) -print0 | xargs -0 rm -rf
 }
