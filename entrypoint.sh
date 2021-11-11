@@ -16,6 +16,7 @@ else
     readonly sourceDirPath="$INPUT_SOURCE_DIR_PATH"
 fi
 readonly targetDirPath=$(mktemp -d '/tmp.XXXXXXXXXX')
+readonly remote=tmp$(($(date +%s%N)/1000000))
 
 cat > /.env <<OUT
 # Note: the .env file must be located in the php-prefixer-cli.phar directory
@@ -40,8 +41,6 @@ initTargetDirGitRepo() {
     rsync -avq "$sourceDirPath/.git" "$targetDirPath"
 
     pushd "$targetDirPath" > /dev/null
-
-    readonly remote=tmp$(($(date +%s%N)/1000000))
 
     git remote add "$remote" "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY"
 
@@ -76,13 +75,13 @@ initComposerPackages() {
 }
 
 prepareTheTargetDir() {
-    pushd "$targetDirPath" > /dev/null
-
     # Remove the source composer.json, composer.lock, vendor, and vendor_prefixed to avoid collisions when receiving the prefixed results:
     # the prefixed composer.json, composer.lock and vendor folders are included in the prefixed results and they must replace the files copied from source.
     find "$targetDirPath" \( \( -name composer.json -o -name composer.lock \) -type f \) -print0 | xargs -0 rm -rf
     find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) -print0 | xargs -0 rm -rf
 }
+
+pushd "$sourceDirPath" > /dev/null
 
 # Create the target directory where the prefixed results will be stored
 initTargetDirGitRepo
@@ -99,6 +98,8 @@ initComposerPackages "$targetDirPath"
 # Clean the composer-related files from target directory before prefixing
 prepareTheTargetDir
 
+pushd "$targetDirPath" > /dev/null
+
 # Let's go!
 /php-prefixer-cli.phar prefix --delete-build
 
@@ -113,3 +114,5 @@ if [ -n "${CHANGED}" ]; then
 fi
 
 popd > /dev/null # $targetDirPath
+
+popd > /dev/null # $sourceDirPath
