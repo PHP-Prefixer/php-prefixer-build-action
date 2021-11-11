@@ -10,32 +10,20 @@
 
 set -eu
 
+readonly baseDirPath=$(pwd)
+
 if [[ -z "$INPUT_SOURCE_DIR_PATH" ]]; then
     readonly sourceDirPath=$(pwd)
 else
-    readonly sourceDirPath="$INPUT_SOURCE_DIR_PATH"
+    if [[ "$INPUT_SOURCE_DIR_PATH" = /* ]]; then # absolute path given?
+        readonly sourceDirPath="$INPUT_SOURCE_DIR_PATH"
+    else
+        readonly sourceDirPath="$baseDirPath/$INPUT_SOURCE_DIR_PATH"
+    fi
 fi
+
 readonly targetDirPath=$(mktemp -d '/tmp.XXXXXXXXXX')
 readonly remote=tmp$(($(date +%s%N)/1000000))
-
-cat > /.env <<OUT
-# Note: the .env file must be located in the php-prefixer-cli.phar directory
-
-# Source Directory: The project source directory
-SOURCE_DIRECTORY="$sourceDirPath"
-
-# Target Directory: The target directory where the results are stored
-TARGET_DIRECTORY="$targetDirPath"
-
-# Personal Access Token: The personal access token, generated on PHP-Prefixer Settings
-PERSONAL_ACCESS_TOKEN="$INPUT_PERSONAL_ACCESS_TOKEN"
-
-# Project ID: The identification of the configured project on PHP-Prefixer Projects
-PROJECT_ID="$INPUT_PROJECT_ID"
-
-# GitHub Access Token:  An optional GitHub token to access composer.json dependencies that are managed in private repositories.
-GITHUB_ACCESS_TOKEN="$INPUT_GH_PERSONAL_ACCESS_TOKEN"
-OUT
 
 initTargetDirGitRepo() {
     rsync -avq "$sourceDirPath/.git" "$targetDirPath"
@@ -101,6 +89,24 @@ prepareTheTargetDir
 pushd "$targetDirPath" > /dev/null
 
 # Let's go!
+cat > /.env <<OUT
+# Note: the .env file must be located in the php-prefixer-cli.phar directory
+
+# Source Directory: The project source directory
+SOURCE_DIRECTORY="$sourceDirPath"
+
+# Target Directory: The target directory where the results are stored
+TARGET_DIRECTORY="$targetDirPath"
+
+# Personal Access Token: The personal access token, generated on PHP-Prefixer Settings
+PERSONAL_ACCESS_TOKEN="$INPUT_PERSONAL_ACCESS_TOKEN"
+
+# Project ID: The identification of the configured project on PHP-Prefixer Projects
+PROJECT_ID="$INPUT_PROJECT_ID"
+
+# GitHub Access Token:  An optional GitHub token to access composer.json dependencies that are managed in private repositories.
+GITHUB_ACCESS_TOKEN="$INPUT_GH_PERSONAL_ACCESS_TOKEN"
+OUT
 /php-prefixer-cli.phar prefix --delete-build
 
 CHANGED=$(git status --porcelain)
