@@ -22,6 +22,32 @@ else
     fi
 fi
 
+echo ---------------------------
+cat composer.json
+exit 1
+
+
+#      - name: 'Configure PHP-Prefixer composer.json - project-name'
+#        uses: jossef/action-set-json-field@v1
+#        with:
+#          file: composer.json
+#          field: extra.php-prefixer.project-name
+#          value: Prefixed Illuminate Support
+#
+#      - name: 'Configure PHP-Prefixer composer.json - namespaces-prefix'
+#        uses: jossef/action-set-json-field@v1
+#        with:
+#          file: composer.json
+#          field: extra.php-prefixer.namespaces-prefix
+#          value: PPP
+#
+#      - name: 'Configure PHP-Prefixer composer.json - global-scope-prefix'
+#        uses: jossef/action-set-json-field@v1
+#        with:
+#          file: composer.json
+#          field: extra.php-prefixer.global-scope-prefix
+#          value: PPP_
+
 readonly targetDirPath=$(mktemp -d '/tmp.XXXXXXXXXX')
 readonly remote=tmp$(($(date +%s%N)/1000000))
 
