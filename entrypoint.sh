@@ -23,7 +23,7 @@ else
 fi
 
 echo ---------------------------
-cat composer.json
+cat  illuminate/support/composer.json
 exit 1
 
 
