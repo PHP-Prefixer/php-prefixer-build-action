@@ -86,9 +86,8 @@ initComposerPackages "$targetDirPath"
 # Clean the composer-related files from target directory before prefixing
 prepareTheTargetDir
 
-pushd "$targetDirPath" > /dev/null
-
 # Let's go!
+pushd "$targetDirPath" > /dev/null
 cat > /.env <<OUT
 # Note: the .env file must be located in the php-prefixer-cli.phar directory
 
@@ -109,9 +108,8 @@ GITHUB_ACCESS_TOKEN="$INPUT_GH_PERSONAL_ACCESS_TOKEN"
 OUT
 /php-prefixer-cli.phar prefix --delete-build
 
-CHANGED=$(git status --porcelain)
-
-if [ -n "${CHANGED}" ]; then
+readonly anyChangesDone=$(git status --porcelain)
+if [ -n "${anyChangesDone}" ]; then
     # If there're changes, commit them
     git add --all .
     git commit --all -m "Publish prefixed build $(date '+%Y-%m-%d %H:%M:%S')"
