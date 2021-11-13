@@ -12,7 +12,7 @@ inputs:
     required: true
 
   source_dir_path:
-    description: 'The relative path to the source project directory. It must contain a .git repository and composer.json file. If not, the base repository directory will be used as the value. Example: `foo/bar`.'
+    description: 'The relative path to the source project directory. It must contain PHP source code to be prefixed. Example: `foo/bar`.'
     required: false
 
   target_branch:

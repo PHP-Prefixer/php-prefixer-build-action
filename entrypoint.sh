@@ -11,7 +11,6 @@
 set -eu
 
 readonly baseDirPath=$(pwd)
-
 if [[ -z "$INPUT_SOURCE_DIR_PATH" ]]; then
     readonly sourceDirPath=$(pwd)
 else
@@ -21,38 +20,11 @@ else
         readonly sourceDirPath="$baseDirPath/$INPUT_SOURCE_DIR_PATH"
     fi
 fi
-
-echo ---------------------------
-cat  composer.json
-exit 1
-
-
-#      - name: 'Configure PHP-Prefixer composer.json - project-name'
-#        uses: jossef/action-set-json-field@v1
-#        with:
-#          file: composer.json
-#          field: extra.php-prefixer.project-name
-#          value: Prefixed Illuminate Support
-#
-#      - name: 'Configure PHP-Prefixer composer.json - namespaces-prefix'
-#        uses: jossef/action-set-json-field@v1
-#        with:
-#          file: composer.json
-#          field: extra.php-prefixer.namespaces-prefix
-#          value: PPP
-#
-#      - name: 'Configure PHP-Prefixer composer.json - global-scope-prefix'
-#        uses: jossef/action-set-json-field@v1
-#        with:
-#          file: composer.json
-#          field: extra.php-prefixer.global-scope-prefix
-#          value: PPP_
-
 readonly targetDirPath=$(mktemp -d '/tmp.XXXXXXXXXX')
 readonly remote=tmp$(($(date +%s%N)/1000000))
 
 initTargetDirGitRepo() {
-    rsync -avq "$sourceDirPath/.git" "$targetDirPath"
+    rsync -avq "$baseDirPath/.git" "$targetDirPath"
 
     pushd "$targetDirPath" > /dev/null
 
@@ -78,7 +50,6 @@ copyFilesFromSourceDirToTargetDir() {
         --exclude=vendor_prefixed/ \
         "$sourceDirPath"/ \
         "$targetDirPath"/
-        #        --exclude=node_modules/ \
 }
 
 initComposerPackages() {
@@ -93,6 +64,46 @@ prepareTheTargetDir() {
     # the prefixed composer.json, composer.lock and vendor folders are included in the prefixed results and they must replace the files copied from source.
     find "$targetDirPath" \( \( -name composer.json -o -name composer.lock \) -type f \) -print0 | xargs -0 rm -rf
     find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) -print0 | xargs -0 rm -rf
+}
+
+# $sourceComposerFilePath
+# $targetComposerFilePath
+addPhpPrefixerMeta() {
+    php -- "$1" "$2" <<'OUT'
+<?php
+//declare(strict_types=1);
+$sourceComposerFilePath = $argv[1];
+$targetComposerFilePath = $argv[2];
+
+// Convert all errors to exceptions.
+(function (callable $exceptionHandler, bool $displayErrors): void {
+    error_reporting(E_ALL | E_STRICT);
+    set_error_handler(
+        function ($severity, $message, $filePath, $lineNo) {
+            if (!(error_reporting() & $severity)) {
+                return;
+            }
+            throw new ErrorException($message, 0, $severity, $filePath, $lineNo);
+        }
+    );
+    set_exception_handler($exceptionHandler);
+    ini_set('display_errors', (string)(int)$displayErrors);
+})(
+    function ($e) {
+        echo rtrim((string)$e) . "\n";
+        exit($e->getCode() ?: 1);
+    },
+    true
+);
+
+$sourceProjectMeta = json_decode(file_get_contents($sourceComposerFilePath), true);
+$targetProjectMeta = json_decode(file_get_contents($targetComposerFilePath), true);
+
+if (!isset($targetProjectMeta['extra']['php-prefixer'])) {
+    $targetProjectMeta['extra']['php-prefixer'] = $sourceProjectMeta['extra']['php-prefixer'];
+    file_put_contents($targetComposerFilePath, json_encode($targetProjectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+}
+OUT
 }
 
 pushd "$sourceDirPath" > /dev/null
@@ -111,6 +122,8 @@ initComposerPackages "$targetDirPath"
 
 # Clean the composer-related files from target directory before prefixing
 prepareTheTargetDir
+
+addPhpPrefixerMeta "$baseDirPath/composer.json" "$sourceDirPath/composer.json"
 
 # Let's go!
 pushd "$targetDirPath" > /dev/null
