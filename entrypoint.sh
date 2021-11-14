@@ -150,7 +150,7 @@ OUT
 updateRevision() {
     pushd "$baseDirPath" > /dev/null
 
-    git checkout $currentBranch || true
+    git checkout $currentBranch
 
     git clean -f -d
     git reset --hard HEAD
