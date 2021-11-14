@@ -20,6 +20,40 @@ else
         readonly sourceDirPath="$baseDirPath/$INPUT_SOURCE_DIR_PATH"
     fi
 fi
+readonly baseComposerFilePath="$baseDirPath/composer.json"
+
+# Writes to stdout current revision stored in the $composerFilePath by ['extra']['php-prefixer'][$revKey] or `unknown` string if such element does not exist.
+# $composerFilePath
+# $revKey
+previousRev() {
+    php -- "$1" "$2" <<'OUT'
+<?php
+$composerFilePath = $argv[1];
+$revKey = $argv[2];
+
+// Convert all errors to exceptions.
+error_reporting(E_ALL | E_STRICT);
+ini_set('display_errors', '1');
+set_error_handler(
+    function ($severity, $message, $filePath, $lineNo) {
+        if (!(error_reporting() & $severity)) {
+            return;
+        }
+        throw new ErrorException($message, 0, $severity, $filePath, $lineNo);
+    }
+);
+
+$projectMeta = json_decode(file_get_contents($composerFilePath), true);
+echo $projectMeta['extra']['php-prefixer'][$revKey] ?? 'unknown';
+OUT
+}
+
+if [[ "$currentRev" == $(previousRev "$baseComposerFilePath" "$INPUT_TARGET_BRANCH") ]]; then
+    echo The source directory does not have any changes, exiting...
+    exit 0
+fi
+
+readonly currentRev=$(cd "$sourceDirPath" && git rev-parse HEAD)
 readonly targetDirPath=$(mktemp -d '/tmp.XXXXXXXXXX')
 readonly remote=tmp$(($(date +%s%N)/1000000))
 
@@ -66,46 +100,6 @@ prepareTheTargetDir() {
     find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) -print0 | xargs -0 rm -rf
 }
 
-# $sourceComposerFilePath
-# $targetComposerFilePath
-addPhpPrefixerMeta() {
-    php -- "$1" "$2" <<'OUT'
-<?php
-//declare(strict_types=1);
-$sourceComposerFilePath = $argv[1];
-$targetComposerFilePath = $argv[2];
-
-// Convert all errors to exceptions.
-(function (callable $exceptionHandler, bool $displayErrors): void {
-    error_reporting(E_ALL | E_STRICT);
-    set_error_handler(
-        function ($severity, $message, $filePath, $lineNo) {
-            if (!(error_reporting() & $severity)) {
-                return;
-            }
-            throw new ErrorException($message, 0, $severity, $filePath, $lineNo);
-        }
-    );
-    set_exception_handler($exceptionHandler);
-    ini_set('display_errors', (string)(int)$displayErrors);
-})(
-    function ($e) {
-        echo rtrim((string)$e) . "\n";
-        exit($e->getCode() ?: 1);
-    },
-    true
-);
-
-$sourceProjectMeta = json_decode(file_get_contents($sourceComposerFilePath), true);
-$targetProjectMeta = json_decode(file_get_contents($targetComposerFilePath), true);
-
-if (!isset($targetProjectMeta['extra']['php-prefixer'])) {
-    $targetProjectMeta['extra']['php-prefixer'] = $sourceProjectMeta['extra']['php-prefixer'];
-    file_put_contents($targetComposerFilePath, json_encode($targetProjectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-}
-OUT
-}
-
 pushd "$sourceDirPath" > /dev/null
 
 # Create the target directory where the prefixed results will be stored
@@ -123,7 +117,67 @@ initComposerPackages "$targetDirPath"
 # Clean the composer-related files from target directory before prefixing
 prepareTheTargetDir
 
-addPhpPrefixerMeta "$baseDirPath/composer.json" "$sourceDirPath/composer.json"
+# Copies php-prefixer meta information from the $sourceComposerFilePath into $targetComposerFilePath.
+# $sourceComposerFilePath
+# $targetComposerFilePath
+addPhpPrefixerMeta() {
+    php -- "$1" "$2" <<'OUT'
+<?php
+$sourceComposerFilePath = $argv[1];
+$targetComposerFilePath = $argv[2];
+
+// Convert all errors to exceptions.
+error_reporting(E_ALL | E_STRICT);
+ini_set('display_errors', '1');
+set_error_handler(
+    function ($severity, $message, $filePath, $lineNo) {
+        if (!(error_reporting() & $severity)) {
+            return;
+        }
+        throw new ErrorException($message, 0, $severity, $filePath, $lineNo);
+    }
+);
+
+$sourceProjectMeta = json_decode(file_get_contents($sourceComposerFilePath), true);
+$targetProjectMeta = json_decode(file_get_contents($targetComposerFilePath), true);
+
+if (!isset($targetProjectMeta['extra']['php-prefixer'])) {
+    $targetProjectMeta['extra']['php-prefixer'] = $sourceProjectMeta['extra']['php-prefixer'];
+    file_put_contents($targetComposerFilePath, json_encode($targetProjectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+}
+OUT
+}
+
+# $composerFilePath like /path/to/composer.json
+# $revKey like 7.x-prefixed
+# $revision like a29b7a1987f5a2c82f6f8730b4dde76ed14ec36a
+addRevision() {
+    php -- "$1" "$2" "$3" <<'OUT'
+<?php
+$composerFilePath = $argv[1];
+$revKey = $argv[2];
+$rev = $argv[3];
+
+// Convert all errors to exceptions.
+error_reporting(E_ALL | E_STRICT);
+ini_set('display_errors', '1');
+set_error_handler(
+    function ($severity, $message, $filePath, $lineNo) {
+        if (!(error_reporting() & $severity)) {
+            return;
+        }
+        throw new ErrorException($message, 0, $severity, $filePath, $lineNo);
+    }
+);
+
+$projectMeta = json_decode(file_get_contents($composerFilePath), true);
+
+$projectMeta['extra']['php-prefixer'][$revKey] = $rev;
+file_put_contents($composerFilePath, json_encode($projectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+OUT
+}
+
+addPhpPrefixerMeta "$baseComposerFilePath" "$sourceDirPath/composer.json"
 
 # Let's go!
 pushd "$targetDirPath" > /dev/null
@@ -150,6 +204,7 @@ OUT
 readonly anyChangesDone=$(git status --porcelain)
 if [ -n "${anyChangesDone}" ]; then
     # If there're changes, commit them
+    addRevision "$targetDirPath/composer.json" "$INPUT_TARGET_BRANCH" "$currentRev"
     git add --all .
     git commit --all -m "Publish prefixed build $(date '+%Y-%m-%d %H:%M:%S')"
     git pull -s ours $remote "$INPUT_TARGET_BRANCH" || true # remote may not exist
