@@ -27,6 +27,7 @@ set -x
 git checkout "$INPUT_TARGET_BRANCH"
 ls -al
 git branch
+exit 1
 ehco -----------------------
 
 # Writes to stdout current revision stored in the $composerFilePath by ['extra']['php-prefixer'][$revKey] or `unknown` string if such element does not exist.
