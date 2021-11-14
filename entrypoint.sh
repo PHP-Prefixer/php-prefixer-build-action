@@ -48,12 +48,12 @@ echo $projectMeta['extra']['php-prefixer'][$revKey] ?? 'unknown';
 OUT
 }
 
+readonly currentRev=$(cd "$sourceDirPath" && git rev-parse HEAD)
 if [[ "$currentRev" == $(previousRev "$baseComposerFilePath" "$INPUT_TARGET_BRANCH") ]]; then
     echo The source directory does not have any changes, exiting...
     exit 0
 fi
 
-readonly currentRev=$(cd "$sourceDirPath" && git rev-parse HEAD)
 readonly targetDirPath=$(mktemp -d '/tmp.XXXXXXXXXX')
 readonly remote=tmp$(($(date +%s%N)/1000000))
 
