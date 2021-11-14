@@ -26,11 +26,13 @@ readonly baseComposerFilePath="$baseDirPath/composer.json"
 # $composerFilePath
 # $revKey
 previousRev() {
+    local -r currentBranch=$(git rev-parse --abbrev-ref HEAD)
+    git checkout "$INPUT_TARGET_BRANCH" &> /dev/null || {
+        echo unknown
+        return
+    }
     php -- "$1" "$2" <<'OUT'
 <?php
-$composerFilePath = $argv[1];
-$revKey = $argv[2];
-
 // Convert all errors to exceptions.
 error_reporting(E_ALL | E_STRICT);
 ini_set('display_errors', '1');
@@ -43,13 +45,24 @@ set_error_handler(
     }
 );
 
+$composerFilePath = $argv[1];
+$revKey = $argv[2];
 $projectMeta = json_decode(file_get_contents($composerFilePath), true);
 echo $projectMeta['extra']['php-prefixer'][$revKey] ?? 'unknown';
 OUT
+    git checkout $currentBranch
 }
 
 readonly currentRev=$(cd "$sourceDirPath" && git rev-parse HEAD)
-if [[ "$currentRev" == $(previousRev "$baseComposerFilePath" "$INPUT_TARGET_BRANCH") ]]; then
+readonly previousRev=$(previousRev "$baseComposerFilePath" "$INPUT_TARGET_BRANCH")
+
+echo --------------------------
+echo $currentRev
+echo $previousRev
+echo --------------------------
+exit 1
+
+if [[ "$currentRev" == "$previousRev" ]]; then
     echo The source directory does not have any changes, exiting...
     exit 0
 fi
