@@ -24,8 +24,8 @@ readonly baseComposerFilePath="$baseDirPath/composer.json"
 
 echo ------------------------
 set -x
-git checkout "$INPUT_TARGET_BRANCH"
 ls -al
+git checkout "$INPUT_TARGET_BRANCH"
 git branch
 exit 1
 ehco -----------------------
