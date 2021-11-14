@@ -179,12 +179,11 @@ $projectMeta['extra']['php-prefixer'][$revKey] = $rev;
 file_put_contents($composerFilePath, json_encode($projectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 OUT
 
-    echo ----------------------------------
-    set -x
-    git status
-    git remote -v
-    exit 1
-    echo --------------------------------
+    git add composer.json
+    git commit -m "Updated php-prefixer revision $(date '+%Y-%m-%d %H:%M:%S')"
+    local -r tmpRemote=tmp$(($(date +%s%N)/1000000))
+    git remote add "$tmpRemote" "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY"
+    git push "$tmpRemote" "$currentBranch":"$currentBranch"
 
     popd > /dev/null
 }
