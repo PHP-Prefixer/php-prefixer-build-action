@@ -179,6 +179,9 @@ $projectMeta['extra']['php-prefixer'][$revKey] = $rev;
 file_put_contents($composerFilePath, json_encode($projectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 OUT
 
+    git config --local user.name "$GITHUB_ACTOR"
+    git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
+    git config --local --unset-all "http.https://github.com/.extraheader" || true
     git add composer.json
     git commit -m "Updated php-prefixer revision $(date '+%Y-%m-%d %H:%M:%S')"
     local -r tmpRemote=tmp$(($(date +%s%N)/1000000))
