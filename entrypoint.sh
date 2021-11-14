@@ -186,6 +186,7 @@ OUT
     git commit -m "Updated php-prefixer revision $(date '+%Y-%m-%d %H:%M:%S')"
     local -r tmpRemote=tmp$(($(date +%s%N)/1000000))
     git remote add "$tmpRemote" "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY"
+    git pull -s ours $tmpRemote "$currentBranch"
     git push "$tmpRemote" "$currentBranch":"$currentBranch"
 
     popd > /dev/null
