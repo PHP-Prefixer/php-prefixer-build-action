@@ -21,28 +21,11 @@ else
     fi
 fi
 readonly baseComposerFilePath="$baseDirPath/composer.json"
+readonly currentBranch=$(git rev-parse --abbrev-ref HEAD)
 
-echo ------------------------
-set -x
-ls -al
-git checkout "$INPUT_TARGET_BRANCH"
-git branch
-exit 1
-ehco -----------------------
-
-# Writes to stdout current revision stored in the $composerFilePath by ['extra']['php-prefixer'][$revKey] or `unknown` string if such element does not exist.
-# $composerFilePath
-# $revKey
+# Writes to stdout the previously saved revision like `a29b7a1987f5a2c82f6f8730b4dde76ed14ec36a` or `unknown` string if the revision is not found.
 previousRev() {
-    pushd "$baseDirPath" > /dev/null
-    local -r currentBranch=$(git rev-parse --abbrev-ref HEAD)
-    git checkout "$INPUT_TARGET_BRANCH" &> /dev/null || {
-        git checkout $currentBranch &> /dev/null || true
-        popd > /dev/null
-        echo unknown
-        return
-    }
-    php -- "$1" "$2" <<'OUT'
+    php -- "$baseComposerFilePath" "$INPUT_TARGET_BRANCH" <<'OUT'
 <?php
 // Convert all errors to exceptions.
 error_reporting(E_ALL | E_STRICT);
@@ -61,20 +44,11 @@ $revKey = $argv[2];
 $projectMeta = json_decode(file_get_contents($composerFilePath), true);
 echo $projectMeta['extra']['php-prefixer'][$revKey] ?? 'unknown';
 OUT
-    git checkout $currentBranch &> /dev/null
-    popd > /dev/null
 }
 
 readonly currentRev=$(cd "$sourceDirPath" && git rev-parse HEAD)
-readonly previousRev=$(previousRev "$baseComposerFilePath" "$INPUT_TARGET_BRANCH")
 
-echo --------------------------
-echo $currentRev
-echo $previousRev
-echo --------------------------
-exit 1
-
-if [[ "$currentRev" == "$previousRev" ]]; then
+if [[ "$currentRev" == $(previousRev) ]]; then
     echo The source directory does not have any changes, exiting...
     exit 0
 fi
@@ -173,11 +147,15 @@ if (!isset($targetProjectMeta['extra']['php-prefixer'])) {
 OUT
 }
 
-# $composerFilePath like /path/to/composer.json
-# $revKey like 7.x-prefixed
-# $revision like a29b7a1987f5a2c82f6f8730b4dde76ed14ec36a
-addRevision() {
-    php -- "$1" "$2" "$3" <<'OUT'
+updateRevision() {
+    pushd "$baseDirPath" > /dev/null
+
+    git checkout $currentBranch || true
+
+    git clean -f -d
+    git reset --hard HEAD
+
+    php -- "$baseComposerFilePath" "$INPUT_TARGET_BRANCH" "$currentRev" <<'OUT'
 <?php
 $composerFilePath = $argv[1];
 $revKey = $argv[2];
@@ -200,6 +178,15 @@ $projectMeta = json_decode(file_get_contents($composerFilePath), true);
 $projectMeta['extra']['php-prefixer'][$revKey] = $rev;
 file_put_contents($composerFilePath, json_encode($projectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 OUT
+
+    echo ----------------------------------
+    set -x
+    git status
+    git remote -v
+    exit 1
+    echo --------------------------------
+
+    popd > /dev/null
 }
 
 addPhpPrefixerMeta "$baseComposerFilePath" "$sourceDirPath/composer.json"
@@ -229,11 +216,12 @@ OUT
 readonly anyChangesDone=$(git status --porcelain)
 if [ -n "${anyChangesDone}" ]; then
     # If there're changes, commit them
-    addRevision "$targetDirPath/composer.json" "$INPUT_TARGET_BRANCH" "$currentRev"
     git add --all .
     git commit --all -m "Publish prefixed build $(date '+%Y-%m-%d %H:%M:%S')"
     git pull -s ours $remote "$INPUT_TARGET_BRANCH" || true # remote may not exist
     git push "$remote" "$INPUT_TARGET_BRANCH":"$INPUT_TARGET_BRANCH"
+
+    updateRevision
 fi
 
 popd > /dev/null # $targetDirPath
