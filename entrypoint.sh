@@ -22,12 +22,22 @@ else
 fi
 readonly baseComposerFilePath="$baseDirPath/composer.json"
 
+echo ------------------------
+set -x
+git checkout "$INPUT_TARGET_BRANCH"
+ls -al
+git branch
+ehco -----------------------
+
 # Writes to stdout current revision stored in the $composerFilePath by ['extra']['php-prefixer'][$revKey] or `unknown` string if such element does not exist.
 # $composerFilePath
 # $revKey
 previousRev() {
+    pushd "$baseDirPath" > /dev/null
     local -r currentBranch=$(git rev-parse --abbrev-ref HEAD)
     git checkout "$INPUT_TARGET_BRANCH" &> /dev/null || {
+        git checkout $currentBranch &> /dev/null || true
+        popd > /dev/null
         echo unknown
         return
     }
@@ -50,7 +60,8 @@ $revKey = $argv[2];
 $projectMeta = json_decode(file_get_contents($composerFilePath), true);
 echo $projectMeta['extra']['php-prefixer'][$revKey] ?? 'unknown';
 OUT
-    git checkout $currentBranch
+    git checkout $currentBranch &> /dev/null
+    popd > /dev/null
 }
 
 readonly currentRev=$(cd "$sourceDirPath" && git rev-parse HEAD)
