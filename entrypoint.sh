@@ -10,38 +10,56 @@
 
 set -eu
 
+readonly baseDirPath=$(pwd)
 if [[ -z "$INPUT_SOURCE_DIR_PATH" ]]; then
     readonly sourceDirPath=$(pwd)
 else
-    readonly sourceDirPath="$INPUT_SOURCE_DIR_PATH"
+    if [[ "$INPUT_SOURCE_DIR_PATH" = /* ]]; then # absolute path given?
+        readonly sourceDirPath="$INPUT_SOURCE_DIR_PATH"
+    else
+        readonly sourceDirPath="$baseDirPath/$INPUT_SOURCE_DIR_PATH"
+    fi
 fi
-readonly targetDirPath=$(mktemp -d '/tmp.XXXXXXXXXX')
+readonly baseComposerFilePath="$baseDirPath/composer.json"
+readonly currentBranch=$(git rev-parse --abbrev-ref HEAD)
 
-cat > /.env <<OUT
-# Note: the .env file must be located in the php-prefixer-cli.phar directory
+# Writes to stdout the previously saved revision like `a29b7a1987f5a2c82f6f8730b4dde76ed14ec36a` or `unknown` string if the revision is not found.
+previousRev() {
+    php -- "$baseComposerFilePath" "$INPUT_TARGET_BRANCH" <<'OUT'
+<?php
+// Convert all errors to exceptions.
+error_reporting(E_ALL | E_STRICT);
+ini_set('display_errors', '1');
+set_error_handler(
+    function ($severity, $message, $filePath, $lineNo) {
+        if (!(error_reporting() & $severity)) {
+            return;
+        }
+        throw new ErrorException($message, 0, $severity, $filePath, $lineNo);
+    }
+);
 
-# Source Directory: The project source directory
-SOURCE_DIRECTORY="$sourceDirPath"
-
-# Target Directory: The target directory where the results are stored
-TARGET_DIRECTORY="$targetDirPath"
-
-# Personal Access Token: The personal access token, generated on PHP-Prefixer Settings
-PERSONAL_ACCESS_TOKEN="$INPUT_PERSONAL_ACCESS_TOKEN"
-
-# Project ID: The identification of the configured project on PHP-Prefixer Projects
-PROJECT_ID="$INPUT_PROJECT_ID"
-
-# GitHub Access Token:  An optional GitHub token to access composer.json dependencies that are managed in private repositories.
-GITHUB_ACCESS_TOKEN="$INPUT_GH_PERSONAL_ACCESS_TOKEN"
+$composerFilePath = $argv[1];
+$revKey = $argv[2];
+$projectMeta = json_decode(file_get_contents($composerFilePath), true);
+echo $projectMeta['extra']['php-prefixer'][$revKey] ?? 'unknown';
 OUT
+}
+
+readonly currentRev=$(cd "$sourceDirPath" && git rev-parse HEAD)
+
+if [[ "$currentRev" == $(previousRev) ]]; then
+    echo The source directory does not have any changes, exiting...
+    exit 0
+fi
+
+readonly targetDirPath=$(mktemp -d '/tmp.XXXXXXXXXX')
+readonly remote=tmp$(($(date +%s%N)/1000000))
 
 initTargetDirGitRepo() {
-    rsync -avq "$sourceDirPath/.git" "$targetDirPath"
+    rsync -avq "$baseDirPath/.git" "$targetDirPath"
 
     pushd "$targetDirPath" > /dev/null
-
-    readonly remote=tmp$(($(date +%s%N)/1000000))
 
     git remote add "$remote" "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY"
 
@@ -65,7 +83,6 @@ copyFilesFromSourceDirToTargetDir() {
         --exclude=vendor_prefixed/ \
         "$sourceDirPath"/ \
         "$targetDirPath"/
-        #        --exclude=node_modules/ \
 }
 
 initComposerPackages() {
@@ -76,12 +93,13 @@ initComposerPackages() {
 }
 
 prepareTheTargetDir() {
-    pushd "$targetDirPath" > /dev/null
-
-    # Remove the source composer.json, composer.lock, vendor, and vendor_prefixed to avoid collisions when receiving the prefixed results
+    # Remove the source composer.json, composer.lock, vendor, and vendor_prefixed to avoid collisions when receiving the prefixed results:
+    # the prefixed composer.json, composer.lock and vendor folders are included in the prefixed results and they must replace the files copied from source.
     find "$targetDirPath" \( \( -name composer.json -o -name composer.lock \) -type f \) -print0 | xargs -0 rm -rf
     find "$targetDirPath" \( \( -name vendor -o -name vendor_prefixed \) -type d \) -print0 | xargs -0 rm -rf
 }
+
+pushd "$sourceDirPath" > /dev/null
 
 # Create the target directory where the prefixed results will be stored
 initTargetDirGitRepo
@@ -98,17 +116,117 @@ initComposerPackages "$targetDirPath"
 # Clean the composer-related files from target directory before prefixing
 prepareTheTargetDir
 
+# Copies php-prefixer meta information from the $sourceComposerFilePath into $targetComposerFilePath.
+# $sourceComposerFilePath
+# $targetComposerFilePath
+addPhpPrefixerMeta() {
+    php -- "$1" "$2" <<'OUT'
+<?php
+$sourceComposerFilePath = $argv[1];
+$targetComposerFilePath = $argv[2];
+
+// Convert all errors to exceptions.
+error_reporting(E_ALL | E_STRICT);
+ini_set('display_errors', '1');
+set_error_handler(
+    function ($severity, $message, $filePath, $lineNo) {
+        if (!(error_reporting() & $severity)) {
+            return;
+        }
+        throw new ErrorException($message, 0, $severity, $filePath, $lineNo);
+    }
+);
+
+$sourceProjectMeta = json_decode(file_get_contents($sourceComposerFilePath), true);
+$targetProjectMeta = json_decode(file_get_contents($targetComposerFilePath), true);
+
+if (!isset($targetProjectMeta['extra']['php-prefixer'])) {
+    $targetProjectMeta['extra']['php-prefixer'] = $sourceProjectMeta['extra']['php-prefixer'];
+    file_put_contents($targetComposerFilePath, json_encode($targetProjectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+}
+OUT
+}
+
+updateRevision() {
+    pushd "$baseDirPath" > /dev/null
+
+    git checkout $currentBranch
+
+    git clean -f -d
+    git reset --hard HEAD
+
+    php -- "$baseComposerFilePath" "$INPUT_TARGET_BRANCH" "$currentRev" <<'OUT'
+<?php
+$composerFilePath = $argv[1];
+$revKey = $argv[2];
+$rev = $argv[3];
+
+// Convert all errors to exceptions.
+error_reporting(E_ALL | E_STRICT);
+ini_set('display_errors', '1');
+set_error_handler(
+    function ($severity, $message, $filePath, $lineNo) {
+        if (!(error_reporting() & $severity)) {
+            return;
+        }
+        throw new ErrorException($message, 0, $severity, $filePath, $lineNo);
+    }
+);
+
+$projectMeta = json_decode(file_get_contents($composerFilePath), true);
+
+$projectMeta['extra']['php-prefixer'][$revKey] = $rev;
+file_put_contents($composerFilePath, json_encode($projectMeta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+OUT
+
+    git config --local user.name "$GITHUB_ACTOR"
+    git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
+    git config --local --unset-all "http.https://github.com/.extraheader" || true
+    git add composer.json
+    git commit -m "Updated php-prefixer revision $(date '+%Y-%m-%d %H:%M:%S')"
+    local -r tmpRemote=tmp$(($(date +%s%N)/1000000))
+    git remote add "$tmpRemote" "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY"
+    git pull -s ours $tmpRemote "$currentBranch"
+    git push "$tmpRemote" "$currentBranch":"$currentBranch"
+
+    popd > /dev/null
+}
+
+addPhpPrefixerMeta "$baseComposerFilePath" "$sourceDirPath/composer.json"
+
 # Let's go!
+pushd "$targetDirPath" > /dev/null
+cat > /.env <<OUT
+# Note: the .env file must be located in the php-prefixer-cli.phar directory
+
+# Source Directory: The project source directory
+SOURCE_DIRECTORY="$sourceDirPath"
+
+# Target Directory: The target directory where the results are stored
+TARGET_DIRECTORY="$targetDirPath"
+
+# Personal Access Token: The personal access token, generated on PHP-Prefixer Settings
+PERSONAL_ACCESS_TOKEN="$INPUT_PERSONAL_ACCESS_TOKEN"
+
+# Project ID: The identification of the configured project on PHP-Prefixer Projects
+PROJECT_ID="$INPUT_PROJECT_ID"
+
+# GitHub Access Token:  An optional GitHub token to access composer.json dependencies that are managed in private repositories.
+GITHUB_ACCESS_TOKEN="$INPUT_GH_PERSONAL_ACCESS_TOKEN"
+OUT
 /php-prefixer-cli.phar prefix --delete-build
 
-CHANGED=$(git status --porcelain)
-
-if [ -n "${CHANGED}" ]; then
+readonly anyChangesDone=$(git status --porcelain)
+if [ -n "${anyChangesDone}" ]; then
     # If there're changes, commit them
     git add --all .
     git commit --all -m "Publish prefixed build $(date '+%Y-%m-%d %H:%M:%S')"
     git pull -s ours $remote "$INPUT_TARGET_BRANCH" || true # remote may not exist
     git push "$remote" "$INPUT_TARGET_BRANCH":"$INPUT_TARGET_BRANCH"
+
+    updateRevision
 fi
 
 popd > /dev/null # $targetDirPath
+
+popd > /dev/null # $sourceDirPath
