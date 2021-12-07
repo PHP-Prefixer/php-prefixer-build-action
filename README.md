@@ -1,8 +1,7 @@
 
 <img src="https://php-prefixer.com/images/logo/php-prefixer-action_100.png" align="right" alt="PHP Prefixer Action for Github" />
 
-Use the PHP Prefixer CLI in your Github Actions
-============================================
+# Use the PHP Prefixer CLI in your Github Actions
 
 The **PHP Prefixer Build Action** integrates the [PHP-Prefixer](https://php-prefixer.com/) service with GitHub Actions.
 
@@ -130,4 +129,11 @@ If you found this repository helpful, please consider [upvoting the product on P
 - API: https://php-prefixer.com/docs/rest-api-reference/
 - Command Line: https://php-prefixer.com/docs/command-line/
 
-[secrets]: https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
+
+## Authors
+
+- [Aníbal Sánchez](https://www.twitter.com/anibal_sanchez)
+- [PHP-Prefixer](https://php-prefixer.com/), Desarrollos Inteligentes Virtuales, SL.

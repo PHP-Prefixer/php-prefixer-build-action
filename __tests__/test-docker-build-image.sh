@@ -8,11 +8,4 @@
 #
 # @see         https://php-prefixer.com
 
-set -eu
-
-git config --global user.name github-actions
-git config --global user.email github-actions@github.com
-
-echo 'Running action...'
-node dist/index.js
-echo 'Action finished.'
+docker build --pull -f ./Dockerfile -t php-prefixer-build-action .
