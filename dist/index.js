@@ -1293,7 +1293,6 @@ function getInputs() {
     if (!result.projectId) {
         throw new Error('project_id not defined');
     }
-    core.setSecret(result.projectId);
     return result;
 }
 exports.getInputs = getInputs;
