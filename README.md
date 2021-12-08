@@ -182,6 +182,10 @@ If you found this repository helpful, please consider [upvoting the product on P
 - API: https://php-prefixer.com/docs/rest-api-reference/
 - Command Line: https://php-prefixer.com/docs/command-line/
 
+### Sample Projects
+
+- [PHP-Prefixer/hello-wp-world Action](https://github.com/PHP-Prefixer/hello-wp-world/blob/master/.github/workflows/prefix.yml)
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
