@@ -29,9 +29,6 @@ RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
 
 COPY dist /dist
 
-RUN mkdir -p /github/workspace
-COPY dist /github/workspace/dist
-
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

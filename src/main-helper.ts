@@ -12,6 +12,26 @@ import {makeTempPath} from './fs-helper'
 
 let sourcePath: string
 
+function registerProblemMatcherSync(): void {
+  const candidates = [
+    '/dist/problem-matcher.json',
+    path.join(__dirname, 'problem-matcher.json')
+  ]
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      coreCommand.issueCommand(
+        'add-matcher',
+        {},
+        path.join(__dirname, 'problem-matcher.json')
+      )
+      return
+    }
+  }
+
+  throw new Error('Could not find problem-matcher.json')
+}
+
 export async function run(): Promise<number> {
   try {
     const sourceSettings = checkoutInputHelper.getInputs()
@@ -22,12 +42,7 @@ export async function run(): Promise<number> {
     phpPrefixerSettings.ghPersonalAccessToken = sourceSettings.authToken
 
     try {
-      // Register problem matcher
-      coreCommand.issueCommand(
-        'add-matcher',
-        {},
-        path.join(__dirname, 'problem-matcher.json')
-      )
+      registerProblemMatcherSync()
 
       sourcePath = await makeTempPath()
       sourceSettings.repositoryPath = sourcePath
@@ -67,7 +82,7 @@ export async function run(): Promise<number> {
   }
 
   /* istanbul ignore next */
-  return -1
+  return 1
 }
 
 export async function cleanup(): Promise<void> {

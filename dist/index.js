@@ -1342,6 +1342,19 @@ const phpPrefixerInputHelper = __importStar(__nccwpck_require__(5480));
 const php_prefixer_helper_1 = __nccwpck_require__(5741);
 const fs_helper_1 = __nccwpck_require__(7219);
 let sourcePath;
+function registerProblemMatcherSync() {
+    const candidates = [
+        '/dist/problem-matcher.json',
+        path.join(__dirname, 'problem-matcher.json')
+    ];
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            coreCommand.issueCommand('add-matcher', {}, path.join(__dirname, 'problem-matcher.json'));
+            return;
+        }
+    }
+    throw new Error('Could not find problem-matcher.json');
+}
 function run() {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
@@ -1352,8 +1365,7 @@ function run() {
             const phpPrefixerSettings = phpPrefixerInputHelper.getInputs();
             phpPrefixerSettings.ghPersonalAccessToken = sourceSettings.authToken;
             try {
-                // Register problem matcher
-                coreCommand.issueCommand('add-matcher', {}, path.join(__dirname, 'problem-matcher.json'));
+                registerProblemMatcherSync();
                 sourcePath = yield (0, fs_helper_1.makeTempPath)();
                 sourceSettings.repositoryPath = sourcePath;
                 core.debug(`source path = '${sourcePath}'`);
@@ -1383,7 +1395,7 @@ function run() {
             core.setFailed(`${(_b = (_a = error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : error}`);
         }
         /* istanbul ignore next */
-        return -1;
+        return 1;
     });
 }
 exports.run = run;
