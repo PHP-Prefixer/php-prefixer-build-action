@@ -1354,7 +1354,7 @@ function registerProblemMatcherSync() {
         candidates.push(path.join(process.env['GITHUB_WORKSPACE'], 'problem-matcher.json'));
     }
     candidates.push(path.join(__dirname, 'problem-matcher.json'));
-    candidates.push('/dist/problem-matcher.json');
+    // candidates.push('/dist/problem-matcher.json')
     for (const candidate of candidates) {
         if (fs.existsSync(candidate)) {
             core.info('[php-prefixer-build-action] problem-matcher.json found.');
