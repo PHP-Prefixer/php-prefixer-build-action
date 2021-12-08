@@ -22,7 +22,7 @@ function registerProblemMatcherSync(): void {
   }
 
   candidates.push(path.join(__dirname, 'problem-matcher.json'))
-  candidates.push('/dist/problem-matcher.json')
+  // candidates.push('/dist/problem-matcher.json')
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
