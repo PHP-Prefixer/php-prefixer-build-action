@@ -47,7 +47,7 @@ export async function run(): Promise<number> {
           '[php-prefixer-build-action] The project is already prefixed.'
         )
         await phpPrefixerHelper.cleanup()
-        return 1
+        return 0
       }
 
       core.info('[php-prefixer-build-action] Prefixing ...')

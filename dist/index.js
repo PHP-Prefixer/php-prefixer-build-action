@@ -1364,7 +1364,7 @@ function run() {
                 if (!waitingJob) {
                     core.info('[php-prefixer-build-action] The project is already prefixed.');
                     yield phpPrefixerHelper.cleanup();
-                    return 1;
+                    return 0;
                 }
                 core.info('[php-prefixer-build-action] Prefixing ...');
                 yield phpPrefixerHelper.prefix();
@@ -1421,7 +1421,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const main_helper_1 = __nccwpck_require__(6447);
 // Main
 // eslint-disable-next-line github/no-then
-(0, main_helper_1.run)().then(() => __awaiter(void 0, void 0, void 0, function* () { return yield (0, main_helper_1.cleanup)(); }));
+(0, main_helper_1.run)().then((errorCode) => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, main_helper_1.cleanup)();
+    process.exit(errorCode);
+}));
 
 
 /***/ }),
