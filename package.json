@@ -1,0 +1,49 @@
+{
+  "name": "php-prefixer-build-action",
+  "version": "1.0.0",
+  "description": "The PHP Prefixer Build Action integrates the PHP-Prefixer service with GitHub Actions.",
+  "main": "lib/main.js",
+  "scripts": {
+    "build": "tsc && ncc build --source-map --license licenses.txt",
+    "format": "prettier --write '**/*.ts'",
+    "format-check": "prettier --check '**/*.ts'",
+    "lint": "eslint src/**/*.ts",
+    "package": "ncc build --source-map --license licenses.txt",
+    "test": "jest --coverage --runInBand",
+    "all": "npm run build && npm run format && npm run lint && npm run package && npm test --runInBand"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PHP-Prefixer/php-prefixer-build-action.git"
+  },
+  "keywords": [
+    "php",
+    "prefixer",
+    "composer",
+    "actions",
+    "node",
+    "setup"
+  ],
+  "author": "php-prefixer",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/exec": "^1.1.0",
+    "@actions/github": "^5.0.0",
+    "@actions/tool-cache": "^1.7.1",
+    "github-checkout": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.12",
+    "@typescript-eslint/parser": "^5.6.0",
+    "@vercel/ncc": "^0.33.0",
+    "eslint": "^8.4.1",
+    "eslint-plugin-github": "^4.3.5",
+    "eslint-plugin-jest": "^25.3.0",
+    "jest": "^27.4.3",
+    "js-yaml": "^4.1.0",
+    "prettier": "2.5.1",
+    "ts-jest": "^27.1.0",
+    "typescript": "^4.5.2"
+  }
+}
