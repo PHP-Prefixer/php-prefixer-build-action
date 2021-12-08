@@ -12,7 +12,7 @@
 
 docker run --rm \
   --workdir /github/workspace \
-  --env GITHUB_WORKSPACE=/ \
+  --env GITHUB_WORKSPACE=/github/workspace \
   --env GITHUB_REPOSITORY='anibalsanchez/hello-wp-world' \
   --env INPUT_PERSONAL_ACCESS_TOKEN=$PHP_PREFIXER_PERSONAL_ACCESS_TOKEN \
   --env INPUT_PROJECT_ID=$PHP_PREFIXER_PROJECT_ID \
