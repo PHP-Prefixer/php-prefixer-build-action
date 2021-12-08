@@ -14,10 +14,8 @@
 FROM php:8.0-cli
 LABEL maintainer="PHP-Prefixer / Desarrollos Inteligentes Virtuales, SL. <team@php-prefixer.com>"
 
-RUN mkdir -p /github/workspace
-
-RUN curl -sSfL -o /github/workspace/php-prefixer-cli.phar 'https://github.com/PHP-Prefixer/php-prefixer-cli/releases/download/0.0.6/php-prefixer-cli.phar' \
-  && chmod +x /github/workspace/php-prefixer-cli.phar \
+RUN curl -sSfL -o /php-prefixer-cli.phar 'https://github.com/PHP-Prefixer/php-prefixer-cli/releases/download/0.0.6/php-prefixer-cli.phar' \
+  && chmod +x /php-prefixer-cli.phar \
   && curl -sSfL -o /usr/local/bin/composer 'https://getcomposer.org/composer.phar' \
   && chmod +x /usr/local/bin/composer \
   && apt-get update \
@@ -29,7 +27,7 @@ RUN curl -sSfL -o /github/workspace/php-prefixer-cli.phar 'https://github.com/PH
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
   && apt-get install -y nodejs
 
-COPY dist /github/workspace/dist
+COPY dist /dist
 
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
