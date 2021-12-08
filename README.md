@@ -59,16 +59,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
       - name: Run PHP-Prefixer
-        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.6
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: PHP-Prefixer/php-prefixer-build-action@v1.0.0
         with:
           personal_access_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           project_id: ${{ secrets.PROJECT_ID }}
+          token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
     # ... then your own project steps ...
 ```
 
@@ -80,9 +76,68 @@ Parameter | Description | Required | Example
 ---------|----------| ---------|----------
 PERSONAL_ACCESS_TOKEN | The PHP-Prefixer PAT/Personal Access Token. The token must be configured in the PHP-Prefixer account. | Yes | `789\|123456789...`
 PROJECT_ID | The project ID to process the source code. The project must be configured in your account in the PHP-Prefixer account. | Yes | `5432`
-SOURCE_DIR_PATH | The relative path to the source project directory. It must contain a .git repository and composer.json file. If not, the base repository directory will be used as the value. Example: `foo/bar`. | No | `./`
-TARGET_BRANCH | The branch in the repository where PHP-Prefixer will store the prefixed files after processing. Default value: `prefixed`. | No |
-GH_PERSONAL_ACCESS_TOKEN | The GitHub PAT/Personal Access Token to access private repositories. It is only required if the project, the library or the dependencies are private. | No | `ghp_F4fZ9Cq7QF...`
+TOKEN | The GitHub PAT/Personal Access Token to access private repositories. It is only required if the project, the library or the dependencies are private. | No | `ghp_F4fZ9Cq7QF...`
+
+The Action integrates the [GitHub Action Checkout - actions/checkout](https://github.com/actions/checkout). The following parameters are also available:
+
+<!-- start usage -->
+```yaml
+    # Repository name with owner. For example, actions/checkout
+    # Default: ${{ github.repository }}
+    repository: ''
+
+    # The branch, tag or SHA to checkout. When checking out the repository that
+    # triggered a workflow, this defaults to the reference or SHA for that event.
+    # Otherwise, uses the default branch.
+    ref: ''
+
+    # Personal access token (PAT) used to fetch the repository. The PAT is configured
+    # with the local git config, which enables your scripts to run authenticated git
+    # commands. The post-job step removes the PAT.
+    #
+    # We recommend using a service account with the least permissions necessary. Also
+    # when generating a new PAT, select the least scopes necessary.
+    #
+    # [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
+    #
+    # Default: ${{ github.token }}
+    token: ''
+
+    # SSH key used to fetch the repository. The SSH key is configured with the local
+    # git config, which enables your scripts to run authenticated git commands. The
+    # post-job step removes the SSH key.
+    #
+    # We recommend using a service account with the least permissions necessary.
+    #
+    # [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
+    ssh-key: ''
+
+    # Known hosts in addition to the user and global host key database. The public SSH
+    # keys for a host may be obtained using the utility `ssh-keyscan`. For example,
+    # `ssh-keyscan github.com`. The public key for github.com is always implicitly
+    # added.
+    ssh-known-hosts: ''
+
+    # Whether to perform strict host key checking. When true, adds the options
+    # `StrictHostKeyChecking=yes` and `CheckHostIP=no` to the SSH command line. Use
+    # the input `ssh-known-hosts` to configure additional hosts.
+    # Default: true
+    ssh-strict: ''
+
+    # Whether to download Git-LFS files
+    # Default: false
+    lfs: ''
+
+    # Whether to checkout submodules: `true` to checkout submodules or `recursive` to
+    # recursively checkout submodules.
+    #
+    # When the `ssh-key` input is not provided, SSH URLs beginning with
+    # `git@github.com:` are converted to HTTPS.
+    #
+    # Default: false
+    submodules: ''
+```
+<!-- end usage -->
 
 ## Prefixing Private Repositories
 
@@ -100,13 +155,11 @@ jobs:
     ...
 
       - name: Run PHP-Prefixer
-        uses: PHP-Prefixer/php-prefixer-build-action@v0.0.6
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: PHP-Prefixer/php-prefixer-build-action@v1.0.0
         with:
           personal_access_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           project_id: ${{ secrets.PROJECT_ID }}
-          gh_personal_access_token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
 ```
 
 There is an example repository available for reference at https://github.com/PHP-Prefixer/hello-wp-world that uses a private dependency. Check it out for a live project.

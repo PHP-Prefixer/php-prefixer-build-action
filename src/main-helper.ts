@@ -33,7 +33,7 @@ function registerProblemMatcherSync(): void {
     }
   }
 
-  throw new Error('Could not find problem-matcher.json')
+  core.error('[php-prefixer-build-action] Could not find problem-matcher.json')
 }
 
 export async function run(): Promise<number> {

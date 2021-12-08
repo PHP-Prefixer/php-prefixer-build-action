@@ -1361,7 +1361,7 @@ function registerProblemMatcherSync() {
             return;
         }
     }
-    throw new Error('Could not find problem-matcher.json');
+    core.error('[php-prefixer-build-action] Could not find problem-matcher.json');
 }
 function run() {
     var _a, _b;
