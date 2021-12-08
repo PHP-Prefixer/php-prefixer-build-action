@@ -73,8 +73,10 @@ export async function run(): Promise<number> {
     }
   } catch (error) {
     /* istanbul ignore next */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    core.setFailed(`${(error as any)?.message ?? error}`)
+    core.setFailed(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      `[php-prefixer-build-action] ERROR: ${(error as any)?.message ?? error}`
+    )
   }
 
   /* istanbul ignore next */

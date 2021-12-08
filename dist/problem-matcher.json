@@ -1,7 +1,7 @@
 {
   "problemMatcher": [
     {
-      "owner": "PHP-Prefixer",
+      "owner": "php-prefixer-build-action",
       "pattern": [
         {
           "regexp": "^(fatal|error): (.*)$",

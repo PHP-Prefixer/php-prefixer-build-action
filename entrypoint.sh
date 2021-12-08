@@ -15,6 +15,8 @@ git config --global user.email github-actions@github.com
 
 echo 'Running action...'
 
+ls -al /dist/
+
 node /dist/index.js
 
 echo "Action finished. 🎉 - Status: $?"

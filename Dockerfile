@@ -14,8 +14,8 @@
 FROM php:8.0-cli
 LABEL maintainer="PHP-Prefixer / Desarrollos Inteligentes Virtuales, SL. <team@php-prefixer.com>"
 
-RUN curl -sSfL -o /php-prefixer-cli.phar 'https://github.com/PHP-Prefixer/php-prefixer-cli/releases/download/0.0.6/php-prefixer-cli.phar' \
-  && chmod +x /php-prefixer-cli.phar \
+RUN curl -sSfL -o /usr/local/bin/php-prefixer-cli.phar 'https://github.com/PHP-Prefixer/php-prefixer-cli/releases/download/0.0.6/php-prefixer-cli.phar' \
+  && chmod +x /usr/local/bin/php-prefixer-cli.phar \
   && curl -sSfL -o /usr/local/bin/composer 'https://getcomposer.org/composer.phar' \
   && chmod +x /usr/local/bin/composer \
   && apt-get update \
