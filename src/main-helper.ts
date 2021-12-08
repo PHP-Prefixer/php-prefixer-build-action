@@ -20,11 +20,7 @@ function registerProblemMatcherSync(): void {
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
-      coreCommand.issueCommand(
-        'add-matcher',
-        {},
-        path.join(__dirname, 'problem-matcher.json')
-      )
+      coreCommand.issueCommand('add-matcher', {}, candidate)
       return
     }
   }
