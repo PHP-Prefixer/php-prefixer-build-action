@@ -1383,14 +1383,14 @@ function run() {
                 const phpPrefixerHelper = yield php_prefixer_helper_1.PhpPrefixerHelper.create(sourceSettings, phpPrefixerSettings);
                 const waitingJob = yield phpPrefixerHelper.waitingJob();
                 if (!waitingJob) {
-                    core.info('[php-prefixer-build-action] The project is already prefixed.');
+                    core.info('[php-prefixer-build-action] The project is already prefixed. ✅');
                     yield phpPrefixerHelper.cleanup();
                     return 0;
                 }
                 core.info('[php-prefixer-build-action] Prefixing ...');
                 yield phpPrefixerHelper.prefix();
                 yield phpPrefixerHelper.cleanup();
-                core.info('[php-prefixer-build-action] Project prefixed.');
+                core.info('[php-prefixer-build-action] Project prefixed. 🚀');
                 return 0;
             }
             finally {

@@ -63,7 +63,7 @@ export async function run(): Promise<number> {
       const waitingJob = await phpPrefixerHelper.waitingJob()
       if (!waitingJob) {
         core.info(
-          '[php-prefixer-build-action] The project is already prefixed.'
+          '[php-prefixer-build-action] The project is already prefixed. ✅'
         )
         await phpPrefixerHelper.cleanup()
         return 0
@@ -73,7 +73,7 @@ export async function run(): Promise<number> {
       await phpPrefixerHelper.prefix()
       await phpPrefixerHelper.cleanup()
 
-      core.info('[php-prefixer-build-action] Project prefixed.')
+      core.info('[php-prefixer-build-action] Project prefixed. 🚀')
       return 0
     } finally {
       // Unregister problem matcher
