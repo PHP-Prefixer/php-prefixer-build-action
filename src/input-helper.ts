@@ -40,8 +40,6 @@ export function getInputs(): IPhpPrefixerSettings {
     throw new Error('project_id not defined')
   }
 
-  core.setSecret(result.projectId)
-
   return result
 }
 
