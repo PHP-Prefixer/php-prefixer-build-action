@@ -1285,8 +1285,14 @@ exports.InputHelper = InputHelper;
 function getInputs() {
     const result = {};
     result.personalAccessToken = core.getInput('personal_access_token');
+    if (!result.personalAccessToken) {
+        throw new Error('personal_access_token not defined');
+    }
     core.setSecret(result.personalAccessToken);
     result.projectId = core.getInput('project_id');
+    if (!result.projectId) {
+        throw new Error('project_id not defined');
+    }
     core.setSecret(result.projectId);
     return result;
 }
@@ -1344,12 +1350,13 @@ const fs_helper_1 = __nccwpck_require__(7219);
 let sourcePath;
 function registerProblemMatcherSync() {
     const candidates = [
-        '/dist/problem-matcher.json',
-        path.join(__dirname, 'problem-matcher.json')
+        // The problem-matcher.json must be in the $GITHUB_WORKSPACE
+        path.join(__dirname, 'problem-matcher.json'),
+        '/dist/problem-matcher.json'
     ];
     for (const candidate of candidates) {
         if (fs.existsSync(candidate)) {
-            coreCommand.issueCommand('add-matcher', {}, path.join(__dirname, 'problem-matcher.json'));
+            coreCommand.issueCommand('add-matcher', {}, candidate);
             return;
         }
     }
@@ -1391,8 +1398,9 @@ function run() {
         }
         catch (error) {
             /* istanbul ignore next */
+            core.setFailed(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            core.setFailed(`${(_b = (_a = error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : error}`);
+            `[php-prefixer-build-action] ERROR: ${(_b = (_a = error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : error}`);
         }
         /* istanbul ignore next */
         return 1;

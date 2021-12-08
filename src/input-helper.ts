@@ -27,9 +27,19 @@ export function getInputs(): IPhpPrefixerSettings {
   const result = {} as unknown as IPhpPrefixerSettings
 
   result.personalAccessToken = core.getInput('personal_access_token')
+
+  if (!result.personalAccessToken) {
+    throw new Error('personal_access_token not defined')
+  }
+
   core.setSecret(result.personalAccessToken)
 
   result.projectId = core.getInput('project_id')
+
+  if (!result.projectId) {
+    throw new Error('project_id not defined')
+  }
+
   core.setSecret(result.projectId)
 
   return result
