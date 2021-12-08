@@ -14,8 +14,9 @@ let sourcePath: string
 
 function registerProblemMatcherSync(): void {
   const candidates = [
-    '/dist/problem-matcher.json',
-    path.join(__dirname, 'problem-matcher.json')
+    // The problem-matcher.json must be in the $GITHUB_WORKSPACE
+    path.join(__dirname, 'problem-matcher.json'),
+    '/dist/problem-matcher.json'
   ]
 
   for (const candidate of candidates) {

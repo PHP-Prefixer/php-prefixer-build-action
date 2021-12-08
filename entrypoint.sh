@@ -15,7 +15,11 @@ git config --global user.email github-actions@github.com
 
 echo 'Running action...'
 
-ls -al /dist/
+# The problem-matcher.json must be in the $GITHUB_WORKSPACE
+if [ -d $GITHUB_WORKSPACE ]; then
+  echo 'Copy problem-matcher.json to the workspace'
+  cp /dist/problem-matcher.json $GITHUB_WORKSPACE
+fi
 
 node /dist/index.js
 
