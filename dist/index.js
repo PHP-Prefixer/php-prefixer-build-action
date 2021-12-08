@@ -1349,13 +1349,15 @@ const php_prefixer_helper_1 = __nccwpck_require__(5741);
 const fs_helper_1 = __nccwpck_require__(7219);
 let sourcePath;
 function registerProblemMatcherSync() {
-    const candidates = [
-        // The problem-matcher.json must be in the $GITHUB_WORKSPACE
-        path.join(__dirname, 'problem-matcher.json'),
-        '/dist/problem-matcher.json'
-    ];
+    const candidates = [];
+    if (process.env['GITHUB_WORKSPACE']) {
+        candidates.push(path.join(process.env['GITHUB_WORKSPACE'], 'problem-matcher.json'));
+    }
+    candidates.push(path.join(__dirname, 'problem-matcher.json'));
+    candidates.push('/dist/problem-matcher.json');
     for (const candidate of candidates) {
         if (fs.existsSync(candidate)) {
+            core.info('[php-prefixer-build-action] problem-matcher.json found.');
             coreCommand.issueCommand('add-matcher', {}, candidate);
             return;
         }

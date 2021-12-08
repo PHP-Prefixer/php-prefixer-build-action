@@ -13,14 +13,21 @@ import {makeTempPath} from './fs-helper'
 let sourcePath: string
 
 function registerProblemMatcherSync(): void {
-  const candidates = [
-    // The problem-matcher.json must be in the $GITHUB_WORKSPACE
-    path.join(__dirname, 'problem-matcher.json'),
-    '/dist/problem-matcher.json'
-  ]
+  const candidates: string[] = []
+
+  if (process.env['GITHUB_WORKSPACE']) {
+    candidates.push(
+      path.join(process.env['GITHUB_WORKSPACE'], 'problem-matcher.json')
+    )
+  }
+
+  candidates.push(path.join(__dirname, 'problem-matcher.json'))
+  candidates.push('/dist/problem-matcher.json')
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
+      core.info('[php-prefixer-build-action] problem-matcher.json found.')
+
       coreCommand.issueCommand('add-matcher', {}, candidate)
       return
     }

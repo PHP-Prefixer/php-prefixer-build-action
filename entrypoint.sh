@@ -12,6 +12,7 @@ set -eu
 
 git config --global user.name github-actions
 git config --global user.email github-actions@github.com
+git config --global init.defaultBranch master
 
 echo 'Running action...'
 
