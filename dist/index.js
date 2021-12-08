@@ -1828,7 +1828,12 @@ class RsyncCommandManager {
     }
     copyProjectFiles(sourceDirPath, targetDirPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            const args = ['-avq', '--exclude=vendor/', '--exclude=vendor_prefixed/'];
+            const args = [
+                '-avq',
+                '--delete',
+                '--exclude=vendor/',
+                '--exclude=vendor_prefixed/'
+            ];
             if (fs.existsSync(`${targetDirPath}/.git`)) {
                 args.push('--exclude=.git/');
             }
@@ -1839,7 +1844,12 @@ class RsyncCommandManager {
     }
     copyDotGitFolder(sourceDirPath, targetDirPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            const args = ['-avq', `${sourceDirPath}/.git`, `${targetDirPath}/`];
+            const args = [
+                '-avq',
+                '--delete',
+                `${sourceDirPath}/.git`,
+                `${targetDirPath}/`
+            ];
             yield this.execRsync(args);
         });
     }
