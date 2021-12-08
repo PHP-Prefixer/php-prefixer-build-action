@@ -21,7 +21,12 @@ class RsyncCommandManager implements IRsyncCommandManager {
     sourceDirPath: string,
     targetDirPath: string
   ): Promise<void> {
-    const args = ['-avq', '--exclude=vendor/', '--exclude=vendor_prefixed/']
+    const args = [
+      '-avq',
+      '--delete',
+      '--exclude=vendor/',
+      '--exclude=vendor_prefixed/'
+    ]
 
     if (fs.existsSync(`${targetDirPath}/.git`)) {
       args.push('--exclude=.git/')
@@ -37,7 +42,12 @@ class RsyncCommandManager implements IRsyncCommandManager {
     sourceDirPath: string,
     targetDirPath: string
   ): Promise<void> {
-    const args = ['-avq', `${sourceDirPath}/.git`, `${targetDirPath}/`]
+    const args = [
+      '-avq',
+      '--delete',
+      `${sourceDirPath}/.git`,
+      `${targetDirPath}/`
+    ]
 
     await this.execRsync(args)
   }
