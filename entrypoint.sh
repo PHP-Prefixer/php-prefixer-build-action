@@ -15,10 +15,9 @@ git config --global user.email github-actions@github.com
 
 echo 'Running action...'
 
-cd /
-ls -al
-
 echo GITHUB_WORKSPACE: $GITHUB_WORKSPACE
+ls -al /
+ls -al $GITHUB_WORKSPACE
 
 node /dist/index.js
 echo 'Action finished.'

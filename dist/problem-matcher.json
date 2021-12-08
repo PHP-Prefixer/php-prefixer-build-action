@@ -1,13 +1,13 @@
 {
-    "problemMatcher": [
+  "problemMatcher": [
+    {
+      "owner": "PHP-Prefixer",
+      "pattern": [
         {
-            "owner": "PHP-Prefixer",
-            "pattern": [
-                {
-                    "regexp": "^(fatal|error): (.*)$",
-                    "message": 2
-                }
-            ]
+          "regexp": "^(fatal|error): (.*)$",
+          "message": 2
         }
-    ]
+      ]
+    }
+  ]
 }

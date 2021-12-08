@@ -28,6 +28,7 @@ RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - \
   && apt-get install -y nodejs
 
 COPY dist /dist
+COPY dist $GITHUB_WORKSPACE
 
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
