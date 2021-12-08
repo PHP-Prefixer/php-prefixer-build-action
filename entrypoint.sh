@@ -14,6 +14,9 @@ git config --global user.name github-actions
 git config --global user.email github-actions@github.com
 
 echo 'Running action...'
+
 cd /github/workspace
+ls -al
+
 node dist/index.js
 echo 'Action finished.'
