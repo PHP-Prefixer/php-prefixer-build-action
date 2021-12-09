@@ -4,6 +4,8 @@ import {expect, test, beforeEach} from '@jest/globals'
 import InputHelper from '../src/input-helper'
 import {IGitHelper, createGitHelper} from '../src/git-helper'
 import {getExecOutput} from '@actions/exec'
+import {env, cwd} from 'process'
+import {createCommandManager} from '../src/git-command-manager'
 
 let srcTmpPath: string | undefined
 
@@ -33,6 +35,8 @@ let gitHelper: IGitHelper
 beforeEach(async () => {
   const inputHelper = new InputHelper()
   gitHelper = await createGitHelper(inputHelper.baseDirPath, false)
+
+  env.GITHUB_REPOSITORY = 'lorem/ipsum'
 })
 
 test('branch contains tag', async () => {
@@ -148,7 +152,7 @@ test('push', async () => {
   await getExecOutput(`touch ${licenseFile}`)
   await targetIGitHelper.commitAll()
   await targetIGitHelper.tag('1.2.4')
-  await targetIGitHelper.push('master')
+  await targetIGitHelper.push('origin', 'master')
 
   const upstreamIGitHelper = await createGitHelper(upstreamTmpPath, false)
   const result1 = await upstreamIGitHelper.tagExists('1.2.3')
@@ -200,4 +204,26 @@ test('has changes', async () => {
   const hasChanges = await gitHelper.hasChanges()
   expect(hasChanges).toBeTruthy()
   await fs.promises.rm(srcTmpPath, {recursive: true})
+})
+
+test('remote add', async () => {
+  const tmpIGitHelper = await createTmpRepo()
+
+  await tmpIGitHelper.remoteAdd(false, 'prefixed-origin-1')
+  const result1 = await tmpIGitHelper.remoteExists('prefixed-origin-1')
+  expect(result1).toBeTruthy()
+
+  await tmpIGitHelper.remoteAdd(true, 'prefixed-origin-2')
+  const result2 = await tmpIGitHelper.remoteExists('prefixed-origin-2')
+  expect(result2).toBeTruthy()
+
+  if (srcTmpPath) {
+    const commandManager = await createCommandManager(srcTmpPath, false)
+    await commandManager.config('remote.origin.url', 'git@github.com:PHP-Prefixer/php-prefixer-build-action.git')
+    await tmpIGitHelper.remoteAdd(true, 'prefixed-origin-3')
+    const result3 = await tmpIGitHelper.remoteExists('prefixed-origin-3')
+    expect(result3).toBeTruthy()
+  }
+
+  destroyTmpRepo()
 })

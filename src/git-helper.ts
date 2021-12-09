@@ -1,3 +1,4 @@
+import * as github from '@actions/github'
 import {IGitCommandManager, createCommandManager} from './git-command-manager'
 import {IGitSourceSettings} from 'github-checkout/lib/git-source-settings'
 
@@ -14,7 +15,8 @@ export interface IGitHelper {
   init(): Promise<void>
   lastMatchingTag(pattern: string): Promise<string | undefined>
   pull(remote: boolean, branch: string): Promise<void>
-  push(branch: string): Promise<void>
+  push(remote: string, branch: string): Promise<void>
+  remoteAdd(isRemote: boolean, remoteName: string): Promise<void>
   remoteExists(remote: string): Promise<boolean>
   revisionDate(ref: string): Promise<Date>
   tag(tag: string): Promise<void>
@@ -181,8 +183,20 @@ export class GitHelper implements IGitHelper {
     return this.gitCommandManager.pull('', branch)
   }
 
-  async push(branch: string): Promise<void> {
-    return this.gitCommandManager.push(branch)
+  async push(remote: string, branch: string): Promise<void> {
+    return this.gitCommandManager.push(remote, branch)
+  }
+
+  async remoteAdd(isRemote: boolean, remoteName: string): Promise<void> {
+    const qualifiedRepository = this.qualifiedRepository()
+    let fetchUri = await this.gitCommandManager.tryGetFetchUrl()
+
+    if (isRemote && fetchUri && !fetchUri.endsWith(qualifiedRepository)) {
+      const baseUrl = fetchUri.split(this.settings.repositoryOwner)[0]
+      fetchUri = `${baseUrl}/${qualifiedRepository}.git`
+    }
+
+    return this.gitCommandManager.remoteAdd(remoteName, fetchUri)
   }
 
   async remoteExists(remote: string): Promise<boolean> {
@@ -211,5 +225,9 @@ export class GitHelper implements IGitHelper {
     gitHelper.settings.repositoryPath = workingDirectory
 
     return gitHelper
+  }
+
+  private qualifiedRepository(): string {
+    return `${github.context.repo.owner}/${github.context.repo.repo}`
   }
 }
