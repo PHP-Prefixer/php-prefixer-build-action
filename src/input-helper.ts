@@ -40,6 +40,8 @@ export function getInputs(): IPhpPrefixerSettings {
     throw new Error('project_id not defined')
   }
 
+  result.schema = core.getInput('schema')
+
   return result
 }
 

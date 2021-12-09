@@ -16,7 +16,8 @@ beforeEach(async () => {
     projectId: 'INPUT_PROJECT_ID',
     sourceDirPath: 'SOURCE_DIR_PATH',
     targetDirPath: mockedTargetPath,
-    ghPersonalAccessToken: 'GH_PERSONAL_ACCESS_TOKEN'
+    ghPersonalAccessToken: 'GH_PERSONAL_ACCESS_TOKEN',
+    schema: ''
   }
 })
 

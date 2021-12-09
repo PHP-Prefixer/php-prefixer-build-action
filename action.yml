@@ -4,11 +4,23 @@ description: 'Prefix PHP libraries and projects. PHP-Prefixer is a service to ap
 
 inputs:
   personal_access_token:
-    description: 'The PHP-Prefixer PAT/Personal Access Token. The token must be configured in the PHP-Prefixer account. Example: `789|1234567890123456789012345678901234567890`.'
+    description: >
+      The PHP-Prefixer PAT/Personal Access Token. The token must be configured in the
+      PHP-Prefixer account. Example: `789|1234567890123456789012345678901234567890`.
     required: true
   project_id:
-    description: 'The project ID to process the source code. The project must be configured in your account in the PHP-Prefixer account. Example: `5123`.'
+    description: >
+      The project ID to process the source code. The project must be configured in your
+      account in the PHP-Prefixer account. Example: `5123`.
     required: true
+  schema:
+    description: >
+      The PHP-Prefixer JSON configuration to be applied to the project. By default,
+      the prefixer uses the configuration present in composer.json. If there is no extra
+      configuration or the extra configuration must be replaced, this parameter overrides
+      the composer.json extra configuration to define the PHP-Prefixer schema. Example:
+      '{"project-name": "Prefixed Project","namespaces-prefix": "PPP","global-scope-prefix": "PPP_"}'
+    required: false
   token:
     description: >
       Personal access token (PAT) used to fetch the repository. The PAT is configured
