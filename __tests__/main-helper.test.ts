@@ -8,7 +8,7 @@ import * as gitSourceProvider from 'github-checkout/lib/git-source-provider'
 import * as fs from 'fs'
 import {createGitHelper} from '../src/git-helper'
 
-test('main', async () => {
+test('main - prefix anibalsanchez/hello-wp-world', async () => {
   core.debug('[main-helper.test] test main')
 
   env.GITHUB_WORKSPACE = cwd()
@@ -55,4 +55,31 @@ test('main', async () => {
   await cleanup()
 
   gitSourceProvider.cleanup(sourceSettings.repositoryPath)
+})
+
+test('main - prefix illuminate/support 6.x', async () => {
+  core.debug('[main-helper.test] test main - prefix illuminate/support 6.x')
+
+  env.GITHUB_WORKSPACE = cwd()
+  env.GITHUB_REPOSITORY = 'PHP-Prefixer/prefixed-illuminate-support'
+
+  // phpPrefixerSettings
+  env.INPUT_PERSONAL_ACCESS_TOKEN = env.PHP_PREFIXER_PERSONAL_ACCESS_TOKEN || ''
+  env.INPUT_PROJECT_ID = env.PHP_PREFIXER_PROJECT_ID || ''
+
+  // sourceSettings
+  env.INPUT_REPOSITORY = 'illuminate/support'
+  env.INPUT_REF = '6.x'
+  env.INPUT_TOKEN = env.PHP_PREFIXER_GH_TOKEN || ''
+  env.INPUT_SCHEMA =
+    '{"project-name": "Prefixed Project","namespaces-prefix": "PPP","global-scope-prefix": "PPP_"}'
+
+  env['INPUT_PERSIST-CREDENTIALS'] = 'true'
+  env['INPUT_FETCH-DEPTH'] = '0'
+
+  core.debug('[main-helper.test] run err code 0')
+  const errorCode0 = await run()
+  expect(errorCode0).toBe(0)
+
+  await cleanup()
 })

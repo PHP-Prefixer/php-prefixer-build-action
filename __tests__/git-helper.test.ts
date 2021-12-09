@@ -80,10 +80,10 @@ test('branch contains tag error', async () => {
 })
 
 test('branch exists', async () => {
-  const result1 = await gitHelper.branchExists(false, 'master')
+  const result1 = await gitHelper.branchExists(false, '', 'master')
   expect(result1).toBeFalsy()
 
-  const result2 = await gitHelper.branchExists(false, 'main')
+  const result2 = await gitHelper.branchExists(false, '', 'main')
   expect(result2).toBeTruthy()
 })
 
@@ -93,12 +93,12 @@ test('checkout new branch', async () => {
   let branch = await tmpIGitHelper.currentBranch()
   expect(branch).toBe('master')
 
-  await tmpIGitHelper.checkoutToBranch(false, 'prefixed-1.0.0')
+  await tmpIGitHelper.checkoutToBranch(false, '', 'prefixed-1.0.0')
   branch = await tmpIGitHelper.currentBranch()
   expect(branch).toBe('prefixed-1.0.0')
 
   await tmpIGitHelper.checkout('master', '')
-  await tmpIGitHelper.checkoutToBranch(false, 'prefixed-1.0.0')
+  await tmpIGitHelper.checkoutToBranch(false, '', 'prefixed-1.0.0')
 
   branch = await tmpIGitHelper.currentBranch()
   expect(branch).toBe('prefixed-1.0.0')

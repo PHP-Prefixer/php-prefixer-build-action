@@ -21,6 +21,11 @@ export interface IPhpPrefixerHelperOptions {
   prepareRepositories: boolean
 }
 
+interface IComposerSchema {
+  composerSchema: object
+  phpPrefixerSchema?: object
+}
+
 export class PhpPrefixerHelper {
   private sourceBranch = ''
   private sourceTag = ''
@@ -28,7 +33,7 @@ export class PhpPrefixerHelper {
   targetPrefixedBranch = ''
   targetPrefixedTag = ''
 
-  isRemote = true
+  private isRemote = true
 
   constructor(
     private sourceSettings: IGitSourceSettings,
@@ -44,6 +49,7 @@ export class PhpPrefixerHelper {
     // Never prefixed
     const branchExists = await this.sourceGitHelper.branchExists(
       this.isRemote,
+      this.isRemote ? 'origin' : '',
       this.targetPrefixedBranch
     )
     if (!branchExists) {
@@ -87,20 +93,28 @@ export class PhpPrefixerHelper {
   async prefix(
     options: IPhpPrefixerHelperOptions = {prepareRepositories: true}
   ): Promise<boolean> {
-    core.debug('Prefixing')
-
     if (options.prepareRepositories) {
       await this.prepareRepositories()
     }
+
+    core.debug('Validating')
+    const composerSchema = await this.validate()
+
+    core.debug('Prefixing')
 
     const phpPrefixerSettings: IPhpPrefixerSettings = {
       sourceDirPath: this.sourceSettings.repositoryPath,
       targetDirPath: this.targetPath,
       personalAccessToken: this.phpPrefixerSettings.personalAccessToken,
       projectId: this.phpPrefixerSettings.projectId,
-      ghPersonalAccessToken: this.sourceSettings.authToken
+      ghPersonalAccessToken: this.sourceSettings.authToken,
+      schema: this.phpPrefixerSettings.schema
     }
     await generateDotEnv(this.targetPath, phpPrefixerSettings)
+
+    if (phpPrefixerSettings.schema) {
+      await this.applySchema(composerSchema)
+    }
 
     const phpPrefixerCommandManager = await createPhpPrefixerCommandManager(
       this.targetPath
@@ -178,29 +192,31 @@ export class PhpPrefixerHelper {
   private async prepareRepositories(): Promise<void> {
     core.debug('Preparing source and target repositories')
 
-    // Initialize the source composer project
-    const sourceComposerHelper = await createComposerHelper(
-      this.sourceSettings.repositoryPath
-    )
-    await sourceComposerHelper.installAndOptimize()
-
     // Initialize the target composer project with the source project files
     await copyFilesFromSourceDirToTargetDir(
       this.sourceSettings.repositoryPath,
       this.targetPath
     )
 
-    this.targetGitHelper.remoteAdd(this.isRemote, 'prefixed')
+    await this.targetGitHelper.remoteAdd(this.isRemote, 'prefixed')
+    await this.targetGitHelper.fetchRemote('prefixed')
 
     const branchCreated = await this.targetGitHelper.checkoutToBranch(
       this.isRemote,
+      'prefixed',
       this.targetPrefixedBranch
     )
 
     if (!branchCreated) {
       core.debug('Pulling remote branch')
-      await this.targetGitHelper.pull(this.isRemote, this.targetPrefixedBranch)
+      await this.targetGitHelper.pull('prefixed', this.targetPrefixedBranch)
     }
+
+    // Initialize the source composer project
+    const sourceComposerHelper = await createComposerHelper(
+      this.sourceSettings.repositoryPath
+    )
+    await sourceComposerHelper.installAndOptimize()
 
     // Refresh the latest changes from the source to the prefixed branch
     await copyFilesFromSourceDirToTargetDir(
@@ -213,6 +229,71 @@ export class PhpPrefixerHelper {
     await findCommand.deleteFileRecursively('composer.lock')
     await findCommand.deleteFolderRecursively('vendor')
     await findCommand.deleteFolderRecursively('vendor_prefixed')
+  }
+
+  private async validate(): Promise<IComposerSchema> {
+    const sourceComposerJson = this.sourceComposerJsonFile()
+
+    if (!fs.existsSync(sourceComposerJson)) {
+      throw new Error('composer.json not found')
+    }
+
+    if (!fs.existsSync(`${this.sourceSettings.repositoryPath}/composer.lock`)) {
+      throw new Error('composer.lock not found')
+    }
+
+    try {
+      const buffer = await fs.promises.readFile(sourceComposerJson)
+      const composerSchema = JSON.parse(buffer.toString())
+
+      if (this.phpPrefixerSettings.schema) {
+        const phpPrefixerSchema = JSON.parse(this.phpPrefixerSettings.schema)
+        return {composerSchema, phpPrefixerSchema}
+      }
+
+      if (!composerSchema['extra']) {
+        throw new Error(
+          'SchemaReader: prefixer configuration not found (extra)'
+        )
+      }
+
+      if (!composerSchema['extra']['php-prefixer']) {
+        throw new Error(
+          'SchemaReader: prefixer configuration not found (php-prefixer)'
+        )
+      }
+
+      return {composerSchema}
+    } catch (error) {
+      throw new Error('Unable to parse composer.json')
+    }
+  }
+
+  private async applySchema(validatedSchema: IComposerSchema): Promise<void> {
+    if (!validatedSchema.composerSchema['extra']) {
+      validatedSchema.composerSchema['extra'] = {}
+    }
+
+    if (!validatedSchema.composerSchema['extra']['php-prefixer']) {
+      validatedSchema.composerSchema['extra']['php-prefixer'] = {}
+    }
+
+    const generatedSchema = {...validatedSchema.composerSchema}
+
+    generatedSchema['extra']['php-prefixer'] = {
+      ...validatedSchema.composerSchema['extra']['php-prefixer'],
+      ...validatedSchema.phpPrefixerSchema
+    }
+
+    const sourceComposerJson = this.sourceComposerJsonFile()
+    await fs.promises.writeFile(
+      sourceComposerJson,
+      JSON.stringify(generatedSchema, null, 2)
+    )
+  }
+
+  private sourceComposerJsonFile(): string {
+    return `${this.sourceSettings.repositoryPath}/composer.json`
   }
 
   static async create(

@@ -63,7 +63,8 @@ beforeEach(() => {
     targetDirPath: '',
     personalAccessToken: env.PHP_PREFIXER_PERSONAL_ACCESS_TOKEN || '',
     projectId: env.PHP_PREFIXER_PROJECT_ID || '',
-    ghPersonalAccessToken: env.PHP_PREFIXER_GH_TOKEN || ''
+    ghPersonalAccessToken: env.PHP_PREFIXER_GH_TOKEN || '',
+    schema: ''
   }
 
   env.GITHUB_REPOSITORY = 'lorem/ipsum'
@@ -145,10 +146,10 @@ test('waiting job true - guzzle master 7.1.1 / prefixed prefixed-7.1.1', async (
 
 test('waiting job false - local master / prefixed', async () => {
   const gitHelper = await createTmpRepo()
-  gitHelper.checkoutToBranch(false, 'prefixed')
+  gitHelper.checkoutToBranch(false, '', 'prefixed')
   await getExecOutput(`touch ${srcTmpPath}/license.txt`)
   await gitHelper.commitAll()
-  gitHelper.checkoutToBranch(false, 'master')
+  gitHelper.checkoutToBranch(false, '', 'master')
 
   // Download source
   sourceSettings.ref = 'refs/heads/master'
@@ -167,13 +168,13 @@ test('waiting job false - local master / prefixed', async () => {
 
 test('waiting job false - local 7.0 / prefixed-7.0', async () => {
   const gitHelper = await createTmpRepo()
-  gitHelper.checkoutToBranch(false, '7.0')
+  gitHelper.checkoutToBranch(false, '', '7.0')
   await getExecOutput(`touch ${srcTmpPath}/license-time1.txt`)
   await gitHelper.commitAll()
-  gitHelper.checkoutToBranch(false, 'prefixed-7.0')
+  gitHelper.checkoutToBranch(false, '', 'prefixed-7.0')
   await getExecOutput(`touch ${srcTmpPath}/license-time2.txt`)
   await gitHelper.commitAll()
-  gitHelper.checkoutToBranch(false, '7.0')
+  gitHelper.checkoutToBranch(false, '', '7.0')
 
   // Download source
   sourceSettings.ref = '7.0'
@@ -194,12 +195,12 @@ test('waiting job false - local master 7.1.1 / prefixed prefixed-7.1.1', async (
   const gitHelper = await createTmpRepo()
   gitHelper.tag('7.1.1')
 
-  gitHelper.checkoutToBranch(false, 'prefixed')
+  gitHelper.checkoutToBranch(false, '', 'prefixed')
   await getExecOutput(`touch ${srcTmpPath}/license.txt`)
   await gitHelper.commitAll()
   gitHelper.tag('prefixed-7.1.1')
 
-  gitHelper.checkoutToBranch(false, 'master')
+  gitHelper.checkoutToBranch(false, '', 'master')
 
   // Download source
   sourceSettings.ref = '7.1.1'
@@ -252,7 +253,11 @@ test('prefix - local master / prefixed', async () => {
 
   const upstreamSettings = {...sourceSettings, repositoryPath: upstreamTmpPath}
   const upstreamIGitHelper = await createGitHelper(upstreamSettings)
-  const branchExists = await upstreamIGitHelper.branchExists(false, 'prefixed')
+  const branchExists = await upstreamIGitHelper.branchExists(
+    false,
+    '',
+    'prefixed'
+  )
   expect(branchExists).toBeTruthy()
 
   // Prefix again, to check that there are "No Changes"
@@ -302,7 +307,11 @@ test('prefix - local master 7.1.1 / prefixed prefixed-7.1.1', async () => {
 
   const upstreamSettings = {...sourceSettings, repositoryPath: upstreamTmpPath}
   const upstreamIGitHelper = await createGitHelper(upstreamSettings)
-  const branchExists = await upstreamIGitHelper.branchExists(false, 'prefixed')
+  const branchExists = await upstreamIGitHelper.branchExists(
+    false,
+    '',
+    'prefixed'
+  )
   expect(branchExists).toBeTruthy()
   const tagExists = await upstreamIGitHelper.tagExists('prefixed-7.1.1')
   expect(tagExists).toBeTruthy()
