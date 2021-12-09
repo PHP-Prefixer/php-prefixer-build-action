@@ -68,6 +68,10 @@ jobs:
     # ... then your own project steps ...
 ```
 
+The Action is a straightforward implementation of the [PHP-Prefixer CLI](https://php-prefixer.com/docs/command-line/). The Action clones the repository, packages the project in a ZIP file, sends the source code to PHP-Prefixer, and receives the results. The new package is then committed to the `prefixed` branch to make it available at the repository level.
+
+The Action checks out your repository, packages, and submits the PHP Composer project to be prefixed, receives the processing results, and commits the results. By default, the Action processes the `master` or `main` branches and pushes the results into the `prefixed` branch. Alternatively, the `ref` parameter allows to process a different branch and commits the results to `prefixed`-`ref`.
+
 ### Available Parameters
 
 The Action requires two parameters to function, and it can receive additional parameters for GitHub integration:
