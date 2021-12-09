@@ -28,7 +28,7 @@ export class PhpPrefixerHelper {
   targetPrefixedBranch = ''
   targetPrefixedTag = ''
 
-  remote = true
+  isRemote = true
 
   constructor(
     private sourceSettings: IGitSourceSettings,
@@ -43,7 +43,7 @@ export class PhpPrefixerHelper {
 
     // Never prefixed
     const branchExists = await this.sourceGitHelper.branchExists(
-      this.remote,
+      this.isRemote,
       this.targetPrefixedBranch
     )
     if (!branchExists) {
@@ -153,7 +153,7 @@ export class PhpPrefixerHelper {
   private async retrieveReferences(): Promise<void> {
     core.debug('Retrieving references')
 
-    this.remote = await this.sourceGitHelper.remoteExists('origin')
+    this.isRemote = await this.sourceGitHelper.remoteExists('origin')
 
     this.sourceBranch = await this.sourceGitHelper.currentBranch()
     this.targetPrefixedBranch = generatePrefixedRef(this.sourceBranch)
@@ -191,13 +191,13 @@ export class PhpPrefixerHelper {
     )
 
     const branchCreated = await this.targetGitHelper.checkoutToBranch(
-      this.remote,
+      this.isRemote,
       this.targetPrefixedBranch
     )
 
     if (!branchCreated) {
       core.debug('Pulling remote branch')
-      await this.targetGitHelper.pull(this.remote, this.targetPrefixedBranch)
+      await this.targetGitHelper.pull(this.isRemote, this.targetPrefixedBranch)
     }
 
     // Refresh the latest changes from the source to the prefixed branch
