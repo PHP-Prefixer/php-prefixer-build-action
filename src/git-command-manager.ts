@@ -44,7 +44,7 @@ export interface IGitCommandManager {
   lfsInstall(): Promise<void>
   log1(format?: string): Promise<string>
   pull(remote: string, branch: string): Promise<void>
-  push(branch: string): Promise<void>
+  push(remote: string, branch: string): Promise<void>
   remoteAdd(remoteName: string, remoteUrl: string): Promise<void>
   removeEnvironmentVariable(name: string): void
   remoteExists(remote: string): Promise<boolean>
@@ -353,14 +353,14 @@ class GitCommandManager {
     return output.stdout
   }
 
-  async push(branch: string): Promise<void> {
+  async push(remote: string, branch: string): Promise<void> {
     await this.execGit([
       'push',
       '--tags',
       '--progress',
       '--no-verify',
       '-u',
-      'origin',
+      remote,
       branch
     ])
   }

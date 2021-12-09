@@ -10,8 +10,9 @@ test('composer install & optimize', async () => {
   const composerVendor =
     inputHelper.baseDirPath + '/__tests__/Mock-Composer/vendor'
 
-  !fs.existsSync(composerLock) || await fs.promises.rm(composerLock)
-  !fs.existsSync(composerVendor) || await fs.promises.rm(composerVendor, {recursive: true})
+  !fs.existsSync(composerLock) || (await fs.promises.rm(composerLock))
+  !fs.existsSync(composerVendor) ||
+    (await fs.promises.rm(composerVendor, {recursive: true}))
 
   const composerHelper = await createComposerHelper(
     inputHelper.baseDirPath + '/__tests__/Mock-Composer'

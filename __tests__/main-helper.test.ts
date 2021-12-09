@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { env, cwd } from 'process'
+import {env, cwd} from 'process'
 import {test, expect} from '@jest/globals'
 import {run, cleanup} from '../src/main-helper'
 import * as checkoutInputHelper from 'github-checkout/lib/input-helper'
@@ -33,25 +33,25 @@ test('main', async () => {
 
   const now = new Date()
   const content = `Last build ${now.toISOString()}`
-  await fs.promises.writeFile(`${sourceSettings.repositoryPath}/last-build`, content)
-  const gitHelper = await createGitHelper(
-    sourceSettings.repositoryPath,
-    sourceSettings.lfs
+  await fs.promises.writeFile(
+    `${sourceSettings.repositoryPath}/last-build`,
+    content
   )
+  const gitHelper = await createGitHelper(sourceSettings)
   const currentBranch = await gitHelper.currentBranch()
   await gitHelper.commitAll()
-  await gitHelper.push(currentBranch)
+  await gitHelper.push('origin', currentBranch)
   await fs.promises.rm(sourceSettings.repositoryPath, {recursive: true})
   sourceSettings.repositoryPath = ''
 
-  core.debug('[main-helper.test] run err code 0')
+  core.debug('[main-helper.test] run err code 0 - to be prefixed')
   const errorCode0 = await run()
   expect(errorCode0).toBe(0)
   await cleanup()
 
-  core.debug('[main-helper.test] run err code 1')
+  core.debug('[main-helper.test] run err code 0 - already prefixed')
   const errorCode1 = await run()
-  expect(errorCode1).toBe(1)
+  expect(errorCode1).toBe(0)
   await cleanup()
 
   gitSourceProvider.cleanup(sourceSettings.repositoryPath)

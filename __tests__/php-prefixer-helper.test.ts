@@ -12,10 +12,13 @@ import {PhpPrefixerHelper} from '../src/php-prefixer-helper'
 import InputHelper from '../src/input-helper'
 
 let srcTmpPath: string | undefined
+let sourceSettings: IGitSourceSettings
+let phpPrefixerSettings: IPhpPrefixerSettings
 
 async function createTmpRepo(): Promise<IGitHelper> {
   srcTmpPath = await makeTempPath()
-  const gitHelper = await createGitHelper(srcTmpPath, false)
+  const settings = {...sourceSettings, repositoryPath: srcTmpPath}
+  const gitHelper = await createGitHelper(settings)
   await gitHelper.init()
 
   await getExecOutput(`touch ${srcTmpPath}/composer.json`)
@@ -35,9 +38,6 @@ async function destroyTmpRepo() {
 
   srcTmpPath = undefined
 }
-
-let sourceSettings: IGitSourceSettings
-let phpPrefixerSettings: IPhpPrefixerSettings
 
 beforeEach(() => {
   sourceSettings = {
@@ -65,6 +65,8 @@ beforeEach(() => {
     projectId: env.PHP_PREFIXER_PROJECT_ID || '',
     ghPersonalAccessToken: env.PHP_PREFIXER_GH_TOKEN || ''
   }
+
+  env.GITHUB_REPOSITORY = 'lorem/ipsum'
 })
 
 test('waiting job true - guzzle master / prefixed', async () => {
@@ -219,7 +221,8 @@ test('prefix - local master / prefixed', async () => {
   const mockedProject = inputHelper.baseDirPath + '/__tests__/Mock-PhpPrefixer'
 
   const srcTmpPath = await makeTempPath()
-  const gitHelper = await createGitHelper(srcTmpPath, false)
+  const settings = {...sourceSettings, repositoryPath: srcTmpPath}
+  const gitHelper = await createGitHelper(settings)
   await gitHelper.init()
   const rsync = await createRsync()
   await rsync.copyProjectFiles(mockedProject, srcTmpPath)
@@ -247,7 +250,8 @@ test('prefix - local master / prefixed', async () => {
   const resultPrefix1 = await phpPrefixerHelper.prefix()
   expect(resultPrefix1).toBeTruthy()
 
-  const upstreamIGitHelper = await createGitHelper(upstreamTmpPath, false)
+  const upstreamSettings = {...sourceSettings, repositoryPath: upstreamTmpPath}
+  const upstreamIGitHelper = await createGitHelper(upstreamSettings)
   const branchExists = await upstreamIGitHelper.branchExists(false, 'prefixed')
   expect(branchExists).toBeTruthy()
 
@@ -267,7 +271,8 @@ test('prefix - local master 7.1.1 / prefixed prefixed-7.1.1', async () => {
   const mockedProject = inputHelper.baseDirPath + '/__tests__/Mock-PhpPrefixer'
 
   const srcTmpPath = await makeTempPath()
-  const gitHelper = await createGitHelper(srcTmpPath, false)
+  const settings = {...sourceSettings, repositoryPath: srcTmpPath}
+  const gitHelper = await createGitHelper(settings)
   await gitHelper.init()
   const rsync = await createRsync()
   await rsync.copyProjectFiles(mockedProject, srcTmpPath)
@@ -295,7 +300,8 @@ test('prefix - local master 7.1.1 / prefixed prefixed-7.1.1', async () => {
 
   await phpPrefixerHelper.prefix()
 
-  const upstreamIGitHelper = await createGitHelper(upstreamTmpPath, false)
+  const upstreamSettings = {...sourceSettings, repositoryPath: upstreamTmpPath}
+  const upstreamIGitHelper = await createGitHelper(upstreamSettings)
   const branchExists = await upstreamIGitHelper.branchExists(false, 'prefixed')
   expect(branchExists).toBeTruthy()
   const tagExists = await upstreamIGitHelper.tagExists('prefixed-7.1.1')

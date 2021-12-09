@@ -6,13 +6,15 @@ import {IGitHelper, createGitHelper} from '../src/git-helper'
 import {getExecOutput} from '@actions/exec'
 import {env, cwd} from 'process'
 import {createCommandManager} from '../src/git-command-manager'
+import {IGitSourceSettings} from 'github-checkout/lib/git-source-settings'
 
 let srcTmpPath: string | undefined
+let sourceSettings: IGitSourceSettings
 
 async function createTmpRepo(): Promise<IGitHelper> {
   srcTmpPath = await makeTempPath()
-
-  const gitHelper = await createGitHelper(srcTmpPath, false)
+  const settings = {...sourceSettings, repositoryPath: srcTmpPath}
+  const gitHelper = await createGitHelper(settings)
   await gitHelper.init()
 
   await getExecOutput(`touch ${srcTmpPath}/composer.json`)
@@ -33,8 +35,27 @@ async function destroyTmpRepo() {
 let gitHelper: IGitHelper
 
 beforeEach(async () => {
+  sourceSettings = {
+    repositoryPath: '',
+    repositoryOwner: '',
+    repositoryName: '',
+    ref: '',
+    commit: '',
+    clean: true,
+    fetchDepth: 1,
+    lfs: false,
+    submodules: false,
+    nestedSubmodules: false,
+    authToken: env.PHP_PREFIXER_GH_TOKEN || '',
+    sshKey: '',
+    sshKnownHosts: '',
+    sshStrict: true,
+    persistCredentials: true
+  }
+
   const inputHelper = new InputHelper()
-  gitHelper = await createGitHelper(inputHelper.baseDirPath, false)
+  sourceSettings.repositoryPath = inputHelper.baseDirPath
+  gitHelper = await createGitHelper(sourceSettings)
 
   env.GITHUB_REPOSITORY = 'lorem/ipsum'
 })
@@ -135,7 +156,8 @@ test('last matching tag no tag', async () => {
 
 test('push', async () => {
   const srcTmpPath = await makeTempPath()
-  const gitHelper = await createGitHelper(srcTmpPath, false)
+  const settings = {...sourceSettings, repositoryPath: srcTmpPath}
+  const gitHelper = await createGitHelper(settings)
   await gitHelper.init()
   await getExecOutput(`touch ${srcTmpPath}/composer.json`)
   await gitHelper.commitAll()
@@ -147,14 +169,16 @@ test('push', async () => {
   const targetTmpPath = await makeTempPath()
   await getExecOutput(`git clone ${upstreamTmpPath} ${targetTmpPath}`)
 
-  const targetIGitHelper = await createGitHelper(targetTmpPath, false)
+  const targetSettings = {...sourceSettings, repositoryPath: targetTmpPath}
+  const targetIGitHelper = await createGitHelper(targetSettings)
   const licenseFile = `${targetTmpPath}/license.txt`
   await getExecOutput(`touch ${licenseFile}`)
   await targetIGitHelper.commitAll()
   await targetIGitHelper.tag('1.2.4')
   await targetIGitHelper.push('origin', 'master')
 
-  const upstreamIGitHelper = await createGitHelper(upstreamTmpPath, false)
+  const upstreamSettings = {...sourceSettings, repositoryPath: upstreamTmpPath}
+  const upstreamIGitHelper = await createGitHelper(upstreamSettings)
   const result1 = await upstreamIGitHelper.tagExists('1.2.3')
   expect(result1).toBeTruthy()
   const result2 = await upstreamIGitHelper.tagExists('1.2.4')
@@ -187,7 +211,8 @@ test('tag exists', async () => {
 
 test('has changes', async () => {
   const srcTmpPath = await makeTempPath()
-  const gitHelper = await createGitHelper(srcTmpPath, false)
+  const settings = {...sourceSettings, repositoryPath: srcTmpPath}
+  const gitHelper = await createGitHelper(settings)
   await gitHelper.init()
 
   await fs.promises.mkdir(`${srcTmpPath}/vendor`)
@@ -219,7 +244,10 @@ test('remote add', async () => {
 
   if (srcTmpPath) {
     const commandManager = await createCommandManager(srcTmpPath, false)
-    await commandManager.config('remote.origin.url', 'git@github.com:PHP-Prefixer/php-prefixer-build-action.git')
+    await commandManager.config(
+      'remote.origin.url',
+      'git@github.com:PHP-Prefixer/php-prefixer-build-action.git'
+    )
     await tmpIGitHelper.remoteAdd(true, 'prefixed-origin-3')
     const result3 = await tmpIGitHelper.remoteExists('prefixed-origin-3')
     expect(result3).toBeTruthy()

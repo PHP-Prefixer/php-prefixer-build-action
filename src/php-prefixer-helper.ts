@@ -129,7 +129,7 @@ export class PhpPrefixerHelper {
       await this.targetGitHelper.tag(this.targetPrefixedTag)
     }
 
-    await this.targetGitHelper.push(this.targetPrefixedBranch)
+    await this.targetGitHelper.push('prefixed', this.targetPrefixedBranch)
 
     return true
   }
@@ -190,6 +190,8 @@ export class PhpPrefixerHelper {
       this.targetPath
     )
 
+    this.targetGitHelper.remoteAdd(this.isRemote, 'prefixed')
+
     const branchCreated = await this.targetGitHelper.checkoutToBranch(
       this.isRemote,
       this.targetPrefixedBranch
@@ -221,10 +223,7 @@ export class PhpPrefixerHelper {
     targetGitHelper?: IGitHelper
   ): Promise<PhpPrefixerHelper> {
     if (!sourceGitHelper) {
-      sourceGitHelper = await createGitHelper(
-        sourceSettings.repositoryPath,
-        sourceSettings.lfs
-      )
+      sourceGitHelper = await createGitHelper(sourceSettings)
     }
 
     if (!targetPath) {
@@ -236,7 +235,8 @@ export class PhpPrefixerHelper {
     await fs.promises.access(targetPath, fs.constants.W_OK)
 
     if (!targetGitHelper) {
-      targetGitHelper = await createGitHelper(targetPath, sourceSettings.lfs)
+      const targetSettings = {...sourceSettings, repositoryPath: targetPath}
+      targetGitHelper = await createGitHelper(targetSettings)
     }
 
     const phpPrefixerHelper = new PhpPrefixerHelper(

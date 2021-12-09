@@ -24,10 +24,9 @@ export interface IGitHelper {
 }
 
 export async function createGitHelper(
-  workingDirectory: string,
-  lfs: boolean
+  settings: IGitSourceSettings
 ): Promise<IGitHelper> {
-  return await GitHelper.create(workingDirectory, lfs)
+  return await GitHelper.create(settings)
 }
 
 export class GitHelper implements IGitHelper {
@@ -215,14 +214,14 @@ export class GitHelper implements IGitHelper {
     return this.gitCommandManager.tagExists(pattern)
   }
 
-  static async create(
-    workingDirectory: string,
-    lfs: boolean
-  ): Promise<IGitHelper> {
-    const gitCommandManager = await createCommandManager(workingDirectory, lfs)
+  static async create(settings: IGitSourceSettings): Promise<IGitHelper> {
+    const gitCommandManager = await createCommandManager(
+      settings.repositoryPath,
+      settings.lfs
+    )
 
     const gitHelper = new GitHelper(gitCommandManager)
-    gitHelper.settings.repositoryPath = workingDirectory
+    gitHelper.settings = settings
 
     return gitHelper
   }
