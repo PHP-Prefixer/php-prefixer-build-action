@@ -39,7 +39,7 @@ test('main - prefix anibalsanchez/hello-wp-world', async () => {
   )
   const gitHelper = await createGitHelper(sourceSettings)
   const currentBranch = await gitHelper.currentBranch()
-  await gitHelper.commitAll()
+  await gitHelper.addAllAndCommit()
   await gitHelper.push('origin', currentBranch)
   await fs.promises.rm(sourceSettings.repositoryPath, {recursive: true})
   sourceSettings.repositoryPath = ''

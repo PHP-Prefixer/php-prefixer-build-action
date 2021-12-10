@@ -10,22 +10,18 @@ export interface IGitHelper {
     pattern: string
   ): Promise<boolean>
   checkout(ref: string, startPoint: string): Promise<void>
-  checkoutToBranch(
-    remote: boolean,
-    remoteName: string,
-    branch: string
-  ): Promise<boolean>
-  commitAll(): Promise<void>
+  checkoutToBranch(remoteName: string, branch: string): Promise<boolean>
+  addAllAndCommit(): Promise<void>
   currentBranch(): Promise<string>
   currentRevision(): Promise<string>
-  currentTag(): Promise<string | undefined>
   fetchRemote(remoteName: string, fetchDepth?: number): Promise<void>
   hasChanges(): Promise<boolean>
   init(): Promise<void>
   lastMatchingTag(pattern: string): Promise<string | undefined>
   pull(remoteName: string, branch: string): Promise<void>
-  push(remote: string, branch: string): Promise<void>
-  remoteAdd(remote: boolean, remoteName: string): Promise<void>
+  push(remote: string, refSpec?: string): Promise<void>
+  remoteAddLocalPath(remoteName: string, path: string): Promise<void>
+  remoteAddUrl(remoteName: string): Promise<void>
   remoteExists(remote: string): Promise<boolean>
   revisionDate(ref: string): Promise<Date>
   tag(tag: string): Promise<void>
@@ -94,26 +90,28 @@ export class GitHelper implements IGitHelper {
     return await this.gitCommandManager.checkout(ref, startPoint)
   }
 
-  async checkoutToBranch(
-    remote: boolean,
-    remoteName: string,
-    branch: string
-  ): Promise<boolean> {
+  async checkoutToBranch(remoteName: string, branch: string): Promise<boolean> {
+    const remoteNameBranch = remoteName ? `${remoteName}/${branch}` : branch
     const branchExists = await this.gitCommandManager.branchExists(
-      remote,
-      remote ? `${remoteName}/${branch}` : branch
+      !!remoteName,
+      remoteNameBranch
     )
 
     if (branchExists) {
-      await this.gitCommandManager.checkout(branch, '')
+      await this.gitCommandManager.checkout(remoteNameBranch)
       return false
     }
 
     await this.gitCommandManager.checkoutNewBranch(branch)
+
+    if (remoteName) {
+      await this.gitCommandManager.push(remoteName, branch)
+    }
+
     return true
   }
 
-  async commitAll(): Promise<void> {
+  async addAllAndCommit(): Promise<void> {
     await this.gitCommandManager.addAll()
 
     const now = new Date()
@@ -127,14 +125,6 @@ export class GitHelper implements IGitHelper {
 
   async currentRevision(): Promise<string> {
     return this.gitCommandManager.revParse('HEAD')
-  }
-
-  async currentTag(): Promise<string | undefined> {
-    try {
-      return await this.gitCommandManager.describeTags()
-    } catch (error) {
-      return undefined
-    }
   }
 
   async fetchRemote(remoteName: string, fetchDepth?: number): Promise<void> {
@@ -191,15 +181,19 @@ export class GitHelper implements IGitHelper {
     // return this.gitCommandManager.stashPop()
   }
 
-  async push(remote: string, branch: string): Promise<void> {
-    return this.gitCommandManager.push(remote, branch)
+  async push(remote: string, refSpec?: string): Promise<void> {
+    return this.gitCommandManager.push(remote, refSpec)
   }
 
-  async remoteAdd(remote: boolean, remoteName: string): Promise<void> {
+  async remoteAddLocalPath(remoteName: string, path: string): Promise<void> {
+    return this.gitCommandManager.remoteAdd(remoteName, path)
+  }
+
+  async remoteAddUrl(remoteName: string): Promise<void> {
     const qualifiedRepository = this.qualifiedRepository()
     let fetchUri = await this.gitCommandManager.tryGetFetchUrl()
 
-    if (remote && fetchUri && !fetchUri.endsWith(qualifiedRepository)) {
+    if (fetchUri && !fetchUri.endsWith(qualifiedRepository)) {
       const baseUrl = fetchUri.split(this.settings.repositoryOwner)[0]
       fetchUri = `${baseUrl}${qualifiedRepository}.git`
     }

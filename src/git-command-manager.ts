@@ -21,7 +21,7 @@ export interface IGitCommandManager {
   branchExists(remote: boolean, pattern: string): Promise<boolean>
   branchList(remote: boolean): Promise<string[]>
   branchShowCurrent(): Promise<string>
-  checkout(ref: string, startPoint: string): Promise<void>
+  checkout(ref: string, startPoint?: string): Promise<void>
   checkoutNewBranch(branch: string): Promise<void>
   checkoutDetach(): Promise<void>
   commit(message: string): Promise<void>
@@ -33,7 +33,6 @@ export interface IGitCommandManager {
   ): Promise<void>
   configExists(configKey: string, globalConfig?: boolean): Promise<boolean>
   date(ref: string): Promise<Date>
-  describeTags(): Promise<string>
   fetch(refSpec: string[], fetchDepth?: number): Promise<void>
   fetchRemote(remoteName: string, fetchDepth?: number): Promise<void>
   getDefaultBranch(repositoryUrl: string): Promise<string>
@@ -44,7 +43,7 @@ export interface IGitCommandManager {
   lfsInstall(): Promise<void>
   log1(format?: string): Promise<string>
   pull(remote: string, branch: string): Promise<void>
-  push(remote: string, branch: string): Promise<void>
+  push(remote: string, refSpec?: string): Promise<void>
   remoteAdd(remoteName: string, remoteUrl: string): Promise<void>
   removeEnvironmentVariable(name: string): void
   remoteExists(remote: string): Promise<boolean>
@@ -86,7 +85,7 @@ class GitCommandManager {
   private constructor() {}
 
   async addAll(): Promise<void> {
-    await this.execGit(['add', '*'])
+    await this.execGit(['add', '-A', '*'])
   }
 
   async branchContainsTag(tag: string): Promise<string> {
@@ -161,8 +160,13 @@ class GitCommandManager {
     return output.stdout.trim()
   }
 
-  async checkout(ref: string, startPoint: string): Promise<void> {
+  async checkout(ref: string, startPoint?: string): Promise<void> {
     const args = ['checkout', '--progress']
+
+    if (ref.includes('/')) {
+      args.push('--track')
+    }
+
     if (startPoint) {
       args.push('-B', ref, startPoint)
     } else {
@@ -175,6 +179,7 @@ class GitCommandManager {
   async checkoutNewBranch(branch: string): Promise<void> {
     const args = ['checkout', '--progress']
     args.push('-B', branch)
+    args.push('--no-track', 'HEAD')
 
     await this.execGit(args)
   }
@@ -231,11 +236,6 @@ class GitCommandManager {
     ])
 
     return new Date(Date.parse(output.stdout.trim()))
-  }
-
-  async describeTags(): Promise<string> {
-    const output = await this.execGit(['describe', '--tags'])
-    return output.stdout.trim()
   }
 
   async fetch(refSpec: string[], fetchDepth?: number): Promise<void> {
@@ -353,16 +353,19 @@ class GitCommandManager {
     return output.stdout
   }
 
-  async push(remote: string, branch: string): Promise<void> {
-    await this.execGit([
-      'push',
-      '--tags',
-      '--progress',
-      '--no-verify',
-      '-u',
-      remote,
-      branch
-    ])
+  async push(remote: string, refSpec?: string): Promise<void> {
+    const args = ['push', '--tags', '--progress', '--no-verify']
+
+    if (remote) {
+      args.push('-u')
+      args.push(remote)
+    }
+
+    if (refSpec) {
+      args.push(refSpec)
+    }
+
+    await this.execGit(args)
   }
 
   async remoteAdd(remoteName: string, remoteUrl: string): Promise<void> {

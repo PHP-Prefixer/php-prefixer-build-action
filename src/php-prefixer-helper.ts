@@ -11,14 +11,10 @@ import {create as createPhpPrefixerCommandManager} from './php-prefixer-command-
 
 function generatePrefixedRef(ref: string): string {
   if (!ref || ref === 'main' || ref === 'master') {
-    return 'prefixed'
+    return PREFIXED_BRANCH_NAME
   }
 
-  return `prefixed-${ref}`
-}
-
-export interface IPhpPrefixerHelperOptions {
-  prepareRepositories: boolean
+  return `${PREFIXED_BRANCH_NAME}-${ref}`
 }
 
 interface IComposerSchema {
@@ -26,14 +22,20 @@ interface IComposerSchema {
   phpPrefixerSchema?: object
 }
 
+const PREFIXED_REMOTE_NAME = 'prefixed-upstream'
+
+const PREFIXED_BRANCH_NAME = 'prefixed'
+
 export class PhpPrefixerHelper {
   private sourceBranch = ''
   private sourceTag = ''
 
-  targetPrefixedBranch = ''
+  targetPrefixedBranch = PREFIXED_BRANCH_NAME
   targetPrefixedTag = ''
 
-  private isRemote = true
+  private hasRemoteOrigin = true
+  private branchCreated = false
+  private validatedSchema: IComposerSchema = {composerSchema: {}}
 
   constructor(
     private sourceSettings: IGitSourceSettings,
@@ -47,19 +49,14 @@ export class PhpPrefixerHelper {
     core.debug('Checking waiting job')
 
     // Never prefixed
-    const branchExists = await this.sourceGitHelper.branchExists(
-      this.isRemote,
-      this.isRemote ? 'origin' : '',
-      this.targetPrefixedBranch
-    )
-    if (!branchExists) {
+    if (this.branchCreated) {
       return true
     }
 
     // Prefixing tagged releases
     if (this.targetPrefixedTag) {
       // If prefixed tag exits, it is already processed. Otherwise, it has to be prefixed
-      const tagExists = await this.sourceGitHelper.tagExists(
+      const tagExists = await this.targetGitHelper.tagExists(
         this.targetPrefixedTag
       )
 
@@ -73,15 +70,10 @@ export class PhpPrefixerHelper {
       sourceCurrentRevision
     )
 
-    await this.sourceGitHelper.checkout(this.targetPrefixedBranch, '')
-
-    const lastPrefixedRevision = await this.sourceGitHelper.currentRevision()
-    const lastPrefixedRevisionDate = await this.sourceGitHelper.revisionDate(
+    const lastPrefixedRevision = await this.targetGitHelper.currentRevision()
+    const lastPrefixedRevisionDate = await this.targetGitHelper.revisionDate(
       lastPrefixedRevision
     )
-
-    // Go back to the current revision
-    await this.sourceGitHelper.checkout(sourceCurrentRevision, '')
 
     const elapsed =
       sourceRevisionDate.getTime() - lastPrefixedRevisionDate.getTime()
@@ -90,16 +82,7 @@ export class PhpPrefixerHelper {
     return elapsed > 0
   }
 
-  async prefix(
-    options: IPhpPrefixerHelperOptions = {prepareRepositories: true}
-  ): Promise<boolean> {
-    if (options.prepareRepositories) {
-      await this.prepareRepositories()
-    }
-
-    core.debug('Validating')
-    const composerSchema = await this.validate()
-
+  async prefix(): Promise<boolean> {
     core.debug('Prefixing')
 
     const phpPrefixerSettings: IPhpPrefixerSettings = {
@@ -113,7 +96,7 @@ export class PhpPrefixerHelper {
     await generateDotEnv(this.targetPath, phpPrefixerSettings)
 
     if (phpPrefixerSettings.schema) {
-      await this.applySchema(composerSchema)
+      await this.applySchema()
     }
 
     const phpPrefixerCommandManager = await createPhpPrefixerCommandManager(
@@ -137,13 +120,16 @@ export class PhpPrefixerHelper {
       return false
     }
 
-    await this.targetGitHelper.commitAll()
+    await this.targetGitHelper.addAllAndCommit()
 
     if (this.targetPrefixedTag) {
       await this.targetGitHelper.tag(this.targetPrefixedTag)
     }
 
-    await this.targetGitHelper.push('prefixed', this.targetPrefixedBranch)
+    await this.targetGitHelper.push(
+      PREFIXED_REMOTE_NAME,
+      `${this.targetPrefixedBranch}:${this.targetPrefixedBranch}`
+    )
 
     return true
   }
@@ -160,14 +146,14 @@ export class PhpPrefixerHelper {
     this.targetPath = ''
   }
 
-  // ref: '', branch, tag or SHA to prefix => 'prefixed', prefixed-branch, prefixed-tag or prefixed-SHA
-  // branch 'master' || 'main' => 'prefixed'
+  // ref: '', branch, tag or SHA to prefix => PREFIXED_REMOTE_NAME, prefixed-branch, prefixed-tag or prefixed-SHA
+  // branch 'master' || 'main' => PREFIXED_REMOTE_NAME
   // branch '7.1' => 'prefixed-7.1'
-  // tag '7.1.1' => branch 'prefixed' tag 'prefixed-7.1.1'
+  // tag '7.1.1' => branch PREFIXED_REMOTE_NAME tag 'prefixed-7.1.1'
   private async retrieveReferences(): Promise<void> {
     core.debug('Retrieving references')
 
-    this.isRemote = await this.sourceGitHelper.remoteExists('origin')
+    this.hasRemoteOrigin = await this.sourceGitHelper.remoteExists('origin')
 
     this.sourceBranch = await this.sourceGitHelper.currentBranch()
     this.targetPrefixedBranch = generatePrefixedRef(this.sourceBranch)
@@ -185,7 +171,7 @@ export class PhpPrefixerHelper {
     this.sourceBranch = await this.sourceGitHelper.branchContainsTag(
       this.sourceTag
     )
-    this.targetPrefixedBranch = 'prefixed'
+    this.targetPrefixedBranch = PREFIXED_BRANCH_NAME
     this.targetPrefixedTag = generatePrefixedRef(this.sourceTag)
   }
 
@@ -198,19 +184,21 @@ export class PhpPrefixerHelper {
       this.targetPath
     )
 
-    await this.targetGitHelper.remoteAdd(this.isRemote, 'prefixed')
-    await this.targetGitHelper.fetchRemote('prefixed')
+    if (this.hasRemoteOrigin) {
+      await this.targetGitHelper.remoteAddUrl(PREFIXED_REMOTE_NAME)
+    } else {
+      await this.targetGitHelper.remoteAddLocalPath(
+        PREFIXED_REMOTE_NAME,
+        this.sourceSettings.repositoryPath
+      )
+    }
 
-    const branchCreated = await this.targetGitHelper.checkoutToBranch(
-      this.isRemote,
-      'prefixed',
+    await this.targetGitHelper.fetchRemote(PREFIXED_REMOTE_NAME)
+
+    this.branchCreated = await this.targetGitHelper.checkoutToBranch(
+      this.hasRemoteOrigin ? PREFIXED_REMOTE_NAME : '',
       this.targetPrefixedBranch
     )
-
-    if (!branchCreated) {
-      core.debug('Pulling remote branch')
-      await this.targetGitHelper.pull('prefixed', this.targetPrefixedBranch)
-    }
 
     // Initialize the source composer project
     const sourceComposerHelper = await createComposerHelper(
@@ -238,9 +226,9 @@ export class PhpPrefixerHelper {
       throw new Error('composer.json not found')
     }
 
-    if (!fs.existsSync(`${this.sourceSettings.repositoryPath}/composer.lock`)) {
-      throw new Error('composer.lock not found')
-    }
+    // if (!fs.existsSync(`${this.sourceSettings.repositoryPath}/composer.lock`)) {
+    //   throw new Error('composer.lock not found')
+    // }
 
     try {
       const buffer = await fs.promises.readFile(sourceComposerJson)
@@ -269,20 +257,20 @@ export class PhpPrefixerHelper {
     }
   }
 
-  private async applySchema(validatedSchema: IComposerSchema): Promise<void> {
-    if (!validatedSchema.composerSchema['extra']) {
-      validatedSchema.composerSchema['extra'] = {}
+  private async applySchema(): Promise<void> {
+    if (!this.validatedSchema.composerSchema['extra']) {
+      this.validatedSchema.composerSchema['extra'] = {}
     }
 
-    if (!validatedSchema.composerSchema['extra']['php-prefixer']) {
-      validatedSchema.composerSchema['extra']['php-prefixer'] = {}
+    if (!this.validatedSchema.composerSchema['extra']['php-prefixer']) {
+      this.validatedSchema.composerSchema['extra']['php-prefixer'] = {}
     }
 
-    const generatedSchema = {...validatedSchema.composerSchema}
+    const generatedSchema = {...this.validatedSchema.composerSchema}
 
     generatedSchema['extra']['php-prefixer'] = {
-      ...validatedSchema.composerSchema['extra']['php-prefixer'],
-      ...validatedSchema.phpPrefixerSchema
+      ...this.validatedSchema.composerSchema['extra']['php-prefixer'],
+      ...this.validatedSchema.phpPrefixerSchema
     }
 
     const sourceComposerJson = this.sourceComposerJsonFile()
@@ -313,6 +301,7 @@ export class PhpPrefixerHelper {
     }
 
     core.debug(`target path param = '${targetPath}'`)
+    await fs.promises.access(sourceSettings.repositoryPath, fs.constants.W_OK)
     await fs.promises.access(targetPath, fs.constants.W_OK)
 
     if (!targetGitHelper) {
@@ -329,6 +318,8 @@ export class PhpPrefixerHelper {
     )
 
     await phpPrefixerHelper.retrieveReferences()
+    phpPrefixerHelper.validatedSchema = await phpPrefixerHelper.validate()
+    await phpPrefixerHelper.prepareRepositories()
 
     return phpPrefixerHelper
   }

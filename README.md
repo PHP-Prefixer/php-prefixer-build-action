@@ -76,7 +76,8 @@ Parameter | Description | Required | Example
 ---------|----------| ---------|----------
 PERSONAL_ACCESS_TOKEN | The PHP-Prefixer PAT/Personal Access Token. The token must be configured in the PHP-Prefixer account. | Yes | `789\|123456789...`
 PROJECT_ID | The project ID to process the source code. The project must be configured in your account in the PHP-Prefixer account. | Yes | `5432`
-TOKEN | The GitHub PAT/Personal Access Token to access private repositories. It is only required if the project, the library or the dependencies are private. | No | `ghp_F4fZ9Cq7QF...`
+TOKEN | The GitHub PAT/Personal Access Token to access private repositories. It is only required if the project, the library or the dependencies are private. | Yes | `ghp_F4fZ9Cq7QF...`
+SCHEMA | The PHP-Prefixer JSON configuration to be applied to the project. By default, the prefixer uses the configuration present in composer.json. If there is no extra configuration or the extra configuration must be replaced, this parameter overrides the `composer.json` extra configuration to define the PHP-Prefixer schema. | No | `{"project-name": "Prefixed Project","namespaces-prefix": "PPP","global-scope-prefix": "PPP_"}`
 
 The Action integrates the [GitHub Action Checkout - actions/checkout](https://github.com/actions/checkout). The following parameters are also available:
 

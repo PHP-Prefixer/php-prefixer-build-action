@@ -18,7 +18,7 @@ async function createTmpRepo(): Promise<IGitHelper> {
   await gitHelper.init()
 
   await getExecOutput(`touch ${srcTmpPath}/composer.json`)
-  await gitHelper.commitAll()
+  await gitHelper.addAllAndCommit()
 
   return gitHelper
 }
@@ -37,8 +37,8 @@ let gitHelper: IGitHelper
 beforeEach(async () => {
   sourceSettings = {
     repositoryPath: '',
-    repositoryOwner: '',
-    repositoryName: '',
+    repositoryOwner: 'lorem',
+    repositoryName: 'ipsum',
     ref: '',
     commit: '',
     clean: true,
@@ -93,12 +93,12 @@ test('checkout new branch', async () => {
   let branch = await tmpIGitHelper.currentBranch()
   expect(branch).toBe('master')
 
-  await tmpIGitHelper.checkoutToBranch(false, '', 'prefixed-1.0.0')
+  await tmpIGitHelper.checkoutToBranch('', 'prefixed-1.0.0')
   branch = await tmpIGitHelper.currentBranch()
   expect(branch).toBe('prefixed-1.0.0')
 
   await tmpIGitHelper.checkout('master', '')
-  await tmpIGitHelper.checkoutToBranch(false, '', 'prefixed-1.0.0')
+  await tmpIGitHelper.checkoutToBranch('', 'prefixed-1.0.0')
 
   branch = await tmpIGitHelper.currentBranch()
   expect(branch).toBe('prefixed-1.0.0')
@@ -114,25 +114,6 @@ test('current branch', async () => {
 test('current revision', async () => {
   const result = await gitHelper.currentRevision()
   expect(result.length).toBe(40)
-})
-
-test('current tag', async () => {
-  const tmpIGitHelper = await createTmpRepo()
-
-  await tmpIGitHelper.tag('1.0.0')
-  const result = await tmpIGitHelper.currentTag()
-  expect(result).toBe('1.0.0')
-
-  destroyTmpRepo()
-})
-
-test('current tag error', async () => {
-  const tmpIGitHelper = await createTmpRepo()
-
-  const result = await tmpIGitHelper.currentTag()
-  expect(result).toBeUndefined()
-
-  destroyTmpRepo()
 })
 
 test('last matching tag', async () => {
@@ -160,7 +141,7 @@ test('push', async () => {
   const gitHelper = await createGitHelper(settings)
   await gitHelper.init()
   await getExecOutput(`touch ${srcTmpPath}/composer.json`)
-  await gitHelper.commitAll()
+  await gitHelper.addAllAndCommit()
   await gitHelper.tag('1.2.3')
 
   const upstreamTmpPath = await makeTempPath()
@@ -173,7 +154,7 @@ test('push', async () => {
   const targetIGitHelper = await createGitHelper(targetSettings)
   const licenseFile = `${targetTmpPath}/license.txt`
   await getExecOutput(`touch ${licenseFile}`)
-  await targetIGitHelper.commitAll()
+  await targetIGitHelper.addAllAndCommit()
   await targetIGitHelper.tag('1.2.4')
   await targetIGitHelper.push('origin', 'master')
 
@@ -231,27 +212,33 @@ test('has changes', async () => {
   await fs.promises.rm(srcTmpPath, {recursive: true})
 })
 
-test('remote add', async () => {
+test('remote add url', async () => {
   const tmpIGitHelper = await createTmpRepo()
 
-  await tmpIGitHelper.remoteAdd(false, 'prefixed-origin-1')
+  const commandManager = await createCommandManager(
+    srcTmpPath || '/undefined-path',
+    false
+  )
+  await commandManager.config(
+    'remote.origin.url',
+    'git@github.com:PHP-Prefixer/php-prefixer-build-action.git'
+  )
+  await tmpIGitHelper.remoteAddUrl('prefixed-origin-3')
+  const result = await tmpIGitHelper.remoteExists('prefixed-origin-3')
+  expect(result).toBeTruthy()
+
+  destroyTmpRepo()
+})
+
+test('remote add local path', async () => {
+  const tmpIGitHelper = await createTmpRepo()
+
+  await tmpIGitHelper.remoteAddLocalPath(
+    'prefixed-origin-1',
+    srcTmpPath || '/undefined-path'
+  )
   const result1 = await tmpIGitHelper.remoteExists('prefixed-origin-1')
   expect(result1).toBeTruthy()
-
-  await tmpIGitHelper.remoteAdd(true, 'prefixed-origin-2')
-  const result2 = await tmpIGitHelper.remoteExists('prefixed-origin-2')
-  expect(result2).toBeTruthy()
-
-  if (srcTmpPath) {
-    const commandManager = await createCommandManager(srcTmpPath, false)
-    await commandManager.config(
-      'remote.origin.url',
-      'git@github.com:PHP-Prefixer/php-prefixer-build-action.git'
-    )
-    await tmpIGitHelper.remoteAdd(true, 'prefixed-origin-3')
-    const result3 = await tmpIGitHelper.remoteExists('prefixed-origin-3')
-    expect(result3).toBeTruthy()
-  }
 
   destroyTmpRepo()
 })

@@ -1,5 +1,10 @@
 {
-    "require": {
-        "symfony/console": "^5.3"
+  "require": {},
+  "extra": {
+    "php-prefixer": {
+      "project-name": "Prefixed Project",
+      "namespaces-prefix": "PPP",
+      "global-scope-prefix": "PPP_"
     }
+  }
 }

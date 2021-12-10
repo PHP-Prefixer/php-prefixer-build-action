@@ -10,19 +10,24 @@ import {IPhpPrefixerSettings} from '../src/php-prefixer-settings'
 import {makeTempPath} from '../src/fs-helper'
 import {PhpPrefixerHelper} from '../src/php-prefixer-helper'
 import InputHelper from '../src/input-helper'
+import {createCommandManager} from '../src/git-command-manager'
 
 let srcTmpPath: string | undefined
 let sourceSettings: IGitSourceSettings
 let phpPrefixerSettings: IPhpPrefixerSettings
 
 async function createTmpRepo(): Promise<IGitHelper> {
+  const inputHelper = new InputHelper()
+  const composerJson =
+    inputHelper.baseDirPath + '/__tests__/Mock-Composer/composer.json'
+
   srcTmpPath = await makeTempPath()
   const settings = {...sourceSettings, repositoryPath: srcTmpPath}
   const gitHelper = await createGitHelper(settings)
   await gitHelper.init()
 
-  await getExecOutput(`touch ${srcTmpPath}/composer.json`)
-  await gitHelper.commitAll()
+  await getExecOutput(`cp ${composerJson} ${srcTmpPath}/composer.json`)
+  await gitHelper.addAllAndCommit()
 
   return gitHelper
 }
@@ -47,7 +52,7 @@ beforeEach(() => {
     ref: '',
     commit: '',
     clean: true,
-    fetchDepth: 1,
+    fetchDepth: 0,
     lfs: false,
     submodules: false,
     nestedSubmodules: false,
@@ -64,17 +69,68 @@ beforeEach(() => {
     personalAccessToken: env.PHP_PREFIXER_PERSONAL_ACCESS_TOKEN || '',
     projectId: env.PHP_PREFIXER_PROJECT_ID || '',
     ghPersonalAccessToken: env.PHP_PREFIXER_GH_TOKEN || '',
-    schema: ''
+    schema:
+      '{"project-name": "Prefixed Project","namespaces-prefix": "PPP","global-scope-prefix": "PPP_"}'
   }
 
-  env.GITHUB_REPOSITORY = 'lorem/ipsum'
+  env.GITHUB_REPOSITORY = 'anibalsanchez/hello-wp-world'
 })
 
-test('waiting job true - guzzle master / prefixed', async () => {
+test('waiting job false - psr/container master branch / prefixed', async () => {
   const sourcePath = await makeTempPath()
   sourceSettings.repositoryPath = sourcePath
-  sourceSettings.repositoryName = 'guzzle'
-  sourceSettings.repositoryOwner = 'guzzle'
+  sourceSettings.repositoryName = 'container'
+  sourceSettings.repositoryOwner = 'php-fig'
+
+  // Download source
+  await gitSourceProvider.getSource(sourceSettings)
+
+  const phpPrefixerHelper = await PhpPrefixerHelper.create(
+    sourceSettings,
+    phpPrefixerSettings
+  )
+  const result = await phpPrefixerHelper.waitingJob()
+
+  expect(result).toBeFalsy()
+  expect(phpPrefixerHelper.targetPrefixedBranch).toBe('prefixed')
+  expect(phpPrefixerHelper.targetPrefixedTag).toBeFalsy()
+
+  await phpPrefixerHelper.cleanup()
+  await gitSourceProvider.cleanup(sourcePath)
+  await fs.promises.rm(sourcePath, {recursive: true})
+})
+
+test('waiting job false - psr/container 1.x branch / prefixed-1.x', async () => {
+  const sourcePath = await makeTempPath()
+  sourceSettings.repositoryPath = sourcePath
+  sourceSettings.repositoryName = 'container'
+  sourceSettings.repositoryOwner = 'php-fig'
+  sourceSettings.ref = '1.x'
+
+  // Download source
+  await gitSourceProvider.getSource(sourceSettings)
+
+  const phpPrefixerHelper = await PhpPrefixerHelper.create(
+    sourceSettings,
+    phpPrefixerSettings
+  )
+  const result = await phpPrefixerHelper.waitingJob()
+
+  expect(result).toBeFalsy()
+  expect(phpPrefixerHelper.targetPrefixedBranch).toBe('prefixed-1.x')
+  expect(phpPrefixerHelper.targetPrefixedTag).toBeFalsy()
+
+  await phpPrefixerHelper.cleanup()
+  await gitSourceProvider.cleanup(sourcePath)
+  await fs.promises.rm(sourcePath, {recursive: true})
+})
+
+test('waiting job false - psr/container master 1.1.1 / prefixed prefixed-1.1.1', async () => {
+  const sourcePath = await makeTempPath()
+  sourceSettings.repositoryPath = sourcePath
+  sourceSettings.repositoryName = 'container'
+  sourceSettings.repositoryOwner = 'php-fig'
+  sourceSettings.ref = '1.1.1'
 
   // Download source
   await gitSourceProvider.getSource(sourceSettings)
@@ -87,57 +143,7 @@ test('waiting job true - guzzle master / prefixed', async () => {
 
   expect(result).toBeTruthy()
   expect(phpPrefixerHelper.targetPrefixedBranch).toBe('prefixed')
-  expect(phpPrefixerHelper.targetPrefixedTag).toBeFalsy()
-
-  await phpPrefixerHelper.cleanup()
-  await gitSourceProvider.cleanup(sourcePath)
-  await fs.promises.rm(sourcePath, {recursive: true})
-})
-
-test('waiting job true - guzzle 7.0 / prefixed-7.0', async () => {
-  const sourcePath = await makeTempPath()
-  sourceSettings.repositoryPath = sourcePath
-  sourceSettings.repositoryName = 'guzzle'
-  sourceSettings.repositoryOwner = 'guzzle'
-  sourceSettings.ref = '7.0'
-
-  // Download source
-  await gitSourceProvider.getSource(sourceSettings)
-
-  const phpPrefixerHelper = await PhpPrefixerHelper.create(
-    sourceSettings,
-    phpPrefixerSettings
-  )
-  const result = await phpPrefixerHelper.waitingJob()
-
-  expect(result).toBeTruthy()
-  expect(phpPrefixerHelper.targetPrefixedBranch).toBe('prefixed-7.0')
-  expect(phpPrefixerHelper.targetPrefixedTag).toBeFalsy()
-
-  await phpPrefixerHelper.cleanup()
-  await gitSourceProvider.cleanup(sourcePath)
-  await fs.promises.rm(sourcePath, {recursive: true})
-})
-
-test('waiting job true - guzzle master 7.1.1 / prefixed prefixed-7.1.1', async () => {
-  const sourcePath = await makeTempPath()
-  sourceSettings.repositoryPath = sourcePath
-  sourceSettings.repositoryName = 'guzzle'
-  sourceSettings.repositoryOwner = 'guzzle'
-  sourceSettings.ref = '7.1.1'
-
-  // Download source
-  await gitSourceProvider.getSource(sourceSettings)
-
-  const phpPrefixerHelper = await PhpPrefixerHelper.create(
-    sourceSettings,
-    phpPrefixerSettings
-  )
-  const result = await phpPrefixerHelper.waitingJob()
-
-  expect(result).toBeTruthy()
-  expect(phpPrefixerHelper.targetPrefixedBranch).toBe('prefixed')
-  expect(phpPrefixerHelper.targetPrefixedTag).toBe('prefixed-7.1.1')
+  expect(phpPrefixerHelper.targetPrefixedTag).toBe('prefixed-1.1.1')
 
   await phpPrefixerHelper.cleanup()
   await gitSourceProvider.cleanup(sourcePath)
@@ -146,13 +152,14 @@ test('waiting job true - guzzle master 7.1.1 / prefixed prefixed-7.1.1', async (
 
 test('waiting job false - local master / prefixed', async () => {
   const gitHelper = await createTmpRepo()
-  gitHelper.checkoutToBranch(false, '', 'prefixed')
+  gitHelper.checkoutToBranch('', 'prefixed')
   await getExecOutput(`touch ${srcTmpPath}/license.txt`)
-  await gitHelper.commitAll()
-  gitHelper.checkoutToBranch(false, '', 'master')
+  await gitHelper.addAllAndCommit()
+  gitHelper.checkoutToBranch('', 'master')
 
   // Download source
   sourceSettings.ref = 'refs/heads/master'
+  sourceSettings.repositoryPath = srcTmpPath || '/undefined-path'
 
   const phpPrefixerHelper = await PhpPrefixerHelper.create(
     sourceSettings,
@@ -166,18 +173,19 @@ test('waiting job false - local master / prefixed', async () => {
   await destroyTmpRepo()
 })
 
-test('waiting job false - local 7.0 / prefixed-7.0', async () => {
+test('waiting job false - local 1.1 / prefixed-1.1', async () => {
   const gitHelper = await createTmpRepo()
-  gitHelper.checkoutToBranch(false, '', '7.0')
+  gitHelper.checkoutToBranch('', '1.1')
   await getExecOutput(`touch ${srcTmpPath}/license-time1.txt`)
-  await gitHelper.commitAll()
-  gitHelper.checkoutToBranch(false, '', 'prefixed-7.0')
+  await gitHelper.addAllAndCommit()
+  gitHelper.checkoutToBranch('', 'prefixed-1.1')
   await getExecOutput(`touch ${srcTmpPath}/license-time2.txt`)
-  await gitHelper.commitAll()
-  gitHelper.checkoutToBranch(false, '', '7.0')
+  await gitHelper.addAllAndCommit()
+  gitHelper.checkoutToBranch('', '1.1')
 
   // Download source
-  sourceSettings.ref = '7.0'
+  sourceSettings.ref = '1.1'
+  sourceSettings.repositoryPath = srcTmpPath || '/undefined-path'
 
   const phpPrefixerHelper = await PhpPrefixerHelper.create(
     sourceSettings,
@@ -191,19 +199,20 @@ test('waiting job false - local 7.0 / prefixed-7.0', async () => {
   await phpPrefixerHelper.cleanup()
 })
 
-test('waiting job false - local master 7.1.1 / prefixed prefixed-7.1.1', async () => {
+test('waiting job false - local master 1.1.1 / prefixed prefixed-1.1.1', async () => {
   const gitHelper = await createTmpRepo()
-  gitHelper.tag('7.1.1')
+  gitHelper.tag('1.1.1')
 
-  gitHelper.checkoutToBranch(false, '', 'prefixed')
+  gitHelper.checkoutToBranch('', 'prefixed')
   await getExecOutput(`touch ${srcTmpPath}/license.txt`)
-  await gitHelper.commitAll()
-  gitHelper.tag('prefixed-7.1.1')
+  await gitHelper.addAllAndCommit()
+  gitHelper.tag('prefixed-1.1.1')
 
-  gitHelper.checkoutToBranch(false, '', 'master')
+  gitHelper.checkoutToBranch('', 'master')
 
   // Download source
-  sourceSettings.ref = '7.1.1'
+  sourceSettings.ref = '1.1.1'
+  sourceSettings.repositoryPath = srcTmpPath || '/undefined-path'
 
   const phpPrefixerHelper = await PhpPrefixerHelper.create(
     sourceSettings,
@@ -227,7 +236,7 @@ test('prefix - local master / prefixed', async () => {
   await gitHelper.init()
   const rsync = await createRsync()
   await rsync.copyProjectFiles(mockedProject, srcTmpPath)
-  await gitHelper.commitAll()
+  await gitHelper.addAllAndCommit()
 
   const upstreamTmpPath = await makeTempPath()
   await getExecOutput(`git clone --bare ${srcTmpPath} ${upstreamTmpPath}`)
@@ -251,19 +260,11 @@ test('prefix - local master / prefixed', async () => {
   const resultPrefix1 = await phpPrefixerHelper.prefix()
   expect(resultPrefix1).toBeTruthy()
 
-  const upstreamSettings = {...sourceSettings, repositoryPath: upstreamTmpPath}
-  const upstreamIGitHelper = await createGitHelper(upstreamSettings)
-  const branchExists = await upstreamIGitHelper.branchExists(
-    false,
-    '',
-    'prefixed'
-  )
+  const branchExists = await gitHelper.branchExists(false, '', 'prefixed')
   expect(branchExists).toBeTruthy()
 
   // Prefix again, to check that there are "No Changes"
-  const resultPrefix2 = await phpPrefixerHelper.prefix({
-    prepareRepositories: false
-  })
+  const resultPrefix2 = await phpPrefixerHelper.prefix()
   expect(resultPrefix2).toBeFalsy()
 
   await phpPrefixerHelper.cleanup()
@@ -271,7 +272,7 @@ test('prefix - local master / prefixed', async () => {
   await fs.promises.rm(upstreamTmpPath, {recursive: true})
 })
 
-test('prefix - local master 7.1.1 / prefixed prefixed-7.1.1', async () => {
+test('prefix - local master 1.1.1 / prefixed prefixed-1.1.1', async () => {
   const inputHelper = new InputHelper()
   const mockedProject = inputHelper.baseDirPath + '/__tests__/Mock-PhpPrefixer'
 
@@ -281,15 +282,15 @@ test('prefix - local master 7.1.1 / prefixed prefixed-7.1.1', async () => {
   await gitHelper.init()
   const rsync = await createRsync()
   await rsync.copyProjectFiles(mockedProject, srcTmpPath)
-  await gitHelper.commitAll()
-  await gitHelper.tag('7.1.1')
+  await gitHelper.addAllAndCommit()
+  await gitHelper.tag('1.1.1')
 
   const upstreamTmpPath = await makeTempPath()
   await getExecOutput(`git clone --bare ${srcTmpPath} ${upstreamTmpPath}`)
 
   // Download source
   sourceSettings.repositoryPath = srcTmpPath
-  sourceSettings.ref = '7.1.1'
+  sourceSettings.ref = '1.1.1'
 
   const targetTmpPath = await makeTempPath()
   await getExecOutput(`git clone ${upstreamTmpPath} ${targetTmpPath}`)
@@ -305,15 +306,9 @@ test('prefix - local master 7.1.1 / prefixed prefixed-7.1.1', async () => {
 
   await phpPrefixerHelper.prefix()
 
-  const upstreamSettings = {...sourceSettings, repositoryPath: upstreamTmpPath}
-  const upstreamIGitHelper = await createGitHelper(upstreamSettings)
-  const branchExists = await upstreamIGitHelper.branchExists(
-    false,
-    '',
-    'prefixed'
-  )
+  const branchExists = await gitHelper.branchExists(false, '', 'prefixed')
   expect(branchExists).toBeTruthy()
-  const tagExists = await upstreamIGitHelper.tagExists('prefixed-7.1.1')
+  const tagExists = await gitHelper.tagExists('prefixed-1.1.1')
   expect(tagExists).toBeTruthy()
 
   await phpPrefixerHelper.cleanup()
