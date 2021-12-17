@@ -186,6 +186,7 @@ If you found this repository helpful, please consider [upvoting the product on P
 ### Sample Projects
 
 - [PHP-Prefixer/hello-wp-world Action](https://github.com/PHP-Prefixer/hello-wp-world/blob/master/.github/workflows/prefix.yml)
+- [php-prefixer/prefixed-illuminate-support](https://github.com/PHP-Prefixer/prefixed-illuminate-support)
 
 ### Roadmap
 
