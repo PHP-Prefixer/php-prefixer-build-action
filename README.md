@@ -187,6 +187,10 @@ If you found this repository helpful, please consider [upvoting the product on P
 
 - [PHP-Prefixer/hello-wp-world Action](https://github.com/PHP-Prefixer/hello-wp-world/blob/master/.github/workflows/prefix.yml)
 
+### Roadmap
+
+- GitHub Event `workflow_dispatch` force processing
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
